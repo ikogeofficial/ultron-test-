@@ -1,0 +1,15 @@
+{
+  "name": "Ikoge Focus",
+  "short_name": "Focus",
+  "description": "Pomodoro focus timer with rain, FM radio and Spotify.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1011",
+  "theme_color": "#0f1011",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
