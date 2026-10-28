@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f1011">
+<meta name="theme-color" content="#0c0e10">
 <meta name="color-scheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,14 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-mode="focus">
+
+<div class="bg" aria-hidden="true">
+  <canvas id="aurora" width="160" height="300"></canvas>
+  <video id="bgVideo" muted loop playsinline autoplay disablepictureinpicture hidden></video>
+  <div class="bg-dim"></div>
+</div>
+
 <main class="wrap">
 
   <header class="top">
@@ -28,114 +35,201 @@
     </div>
   </header>
 
-  <!-- TIMER -->
-  <section class="card timer">
-    <svg class="dial" viewBox="0 0 320 320" aria-hidden="true">
-      <circle cx="160" cy="160" r="128" class="track"/>
-      <g id="ticks"></g>
-      <circle id="ring" class="arc" cx="160" cy="160" r="128" transform="rotate(-90 160 160)"/>
-      <circle id="knob" class="knob-halo" cx="160" cy="32" r="17"/>
-    </svg>
-    <div class="readout" role="timer" aria-live="off">
-      <div id="modeLabel" class="mode">FOCUS</div>
-      <div id="time" class="time">25:00</div>
-      <div id="cycleTxt" class="cycle">Session 1 of 4</div>
-    </div>
+  <!-- ================= FOCUS TAB ================= -->
+  <div class="pane" data-pane="focus">
 
-    <div class="tabs" id="tabs">
-      <button class="tab on" data-m="focus">Focus</button>
-      <button class="tab" data-m="short">Short Break</button>
-      <button class="tab" data-m="long">Long Break</button>
-    </div>
-
-    <div class="btnrow">
-      <button class="btn primary" id="startBtn">Start</button>
-      <button class="btn" id="resetBtn">Reset</button>
-    </div>
-
-    <div class="chips" id="chips">
-      <button class="chip" data-min="15">15 Min</button>
-      <button class="chip" data-min="25">25 Min</button>
-      <button class="chip" data-min="45">45 Min</button>
-      <button class="chip" data-min="60">60 Min</button>
-      <button class="chip" data-min="90">90 Min</button>
-    </div>
-  </section>
-
-  <!-- STREAK -->
-  <section class="card streak" aria-label="Streak">
-    <div class="streak-head">
-      <div class="flame" aria-hidden="true">
-        <svg viewBox="0 0 48 48" width="46" height="46">
-          <defs><linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff5a7a"/><stop offset="1" stop-color="#ff2f63"/></linearGradient></defs>
-          <path fill="url(#fg)" d="M24 3c1.5 6.5 9 9.5 11.5 16.5C38 26.5 34 38 24 41c-10-3-14-14.5-11.5-21.5.9-2.5 2.4-4.4 4.3-6.2.3 3 1.7 5 3.5 6C19.200 13 20.500 7.500 24 3z"/>
-          <path fill="#fff" d="M24 23c1.600 2.600 4.500 4.300 4.500 8a4.500 4.500 0 0 1-9 0c0-3.700 2.900-5.400 4.500-8z"/>
-        </svg>
+    <section class="card timer">
+      <svg class="dial" viewBox="0 0 320 320" aria-hidden="true">
+        <circle cx="160" cy="160" r="128" class="track"/>
+        <g id="ticks"></g>
+        <circle id="ring" class="arc" cx="160" cy="160" r="128" transform="rotate(-90 160 160)"/>
+        <circle id="knob" class="knob-halo" cx="160" cy="32" r="17"/>
+      </svg>
+      <div class="readout" role="timer" aria-live="off">
+        <div id="modeLabel" class="mode">FOCUS</div>
+        <div id="time" class="time">25:00</div>
+        <div id="cycleTxt" class="cycle">Session 1 of 4</div>
       </div>
-      <div class="streak-t">
-        <div class="lbl">STREAK</div>
-        <div class="big"><span id="streakNum">0</span> <small>DAYS</small></div>
+
+      <div class="tabs" id="tabs">
+        <button class="tab on" data-m="focus">Focus</button>
+        <button class="tab" data-m="short">Short Break</button>
+        <button class="tab" data-m="long">Long Break</button>
       </div>
-      <div class="foot" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+
+      <div class="btnrow">
+        <button class="btn primary" id="startBtn">Start</button>
+        <button class="btn" id="resetBtn">Reset</button>
       </div>
-    </div>
-    <div class="week" id="week"></div>
-    <div class="goal">
-      <div class="lbl">TODAY'S FOCUS</div>
+
+      <div class="chips" id="chips">
+        <button class="chip" data-min="15">15 Min</button>
+        <button class="chip" data-min="25">25 Min</button>
+        <button class="chip" data-min="45">45 Min</button>
+        <button class="chip" data-min="60">60 Min</button>
+        <button class="chip" data-min="90">90 Min</button>
+      </div>
+    </section>
+
+    <section class="card streak" aria-label="Streak">
+      <div class="streak-head">
+        <div class="flame" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="46" height="46">
+            <defs><linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff5a7a"/><stop offset="1" stop-color="#ff2f63"/></linearGradient></defs>
+            <path fill="url(#fg)" d="M24 3c1.5 6.5 9 9.5 11.5 16.5C38 26.5 34 38 24 41c-10-3-14-14.5-11.5-21.5.9-2.5 2.4-4.4 4.3-6.2.3 3 1.7 5 3.5 6C19.200 13 20.500 7.500 24 3z"/>
+            <path fill="#fff" d="M24 23c1.600 2.600 4.500 4.300 4.500 8a4.500 4.500 0 0 1-9 0c0-3.700 2.900-5.400 4.500-8z"/>
+          </svg>
+        </div>
+        <div class="streak-t">
+          <div class="lbl">STREAK</div>
+          <div class="big"><span id="streakNum">0</span> <small>DAYS</small></div>
+        </div>
+        <div class="foot" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </div>
+      </div>
+      <div class="week" id="week"></div>
+      <div class="goal">
+        <div class="lbl">TODAY'S FOCUS</div>
+        <div class="goal-row">
+          <div class="goal-num" id="goalTxt">0<small>/120 min</small></div>
+          <div class="goal-pct" id="goalPct">0%</div>
+        </div>
+        <div class="bar"><i id="goalBar"></i></div>
+      </div>
+    </section>
+
+    <section class="card sounds">
+      <div class="sec-h">Ambient</div>
+      <div class="chips amb" id="amb">
+        <button class="chip" data-k="light">Light Rain</button>
+        <button class="chip" data-k="heavy">Heavy Rain</button>
+        <button class="chip" data-k="brown">Deep Hum</button>
+      </div>
+      <label class="slider"><span>Volume</span><input id="ambVol" type="range" min="0" max="1" step="0.05" value="0.6"></label>
+
+      <div class="sep"></div>
+
+      <div class="sec-h">FM Radio</div>
+      <div class="radio-row">
+        <select id="radioSel" aria-label="Station">
+          <option value="https://ice1.somafm.com/groovesalad-128-mp3">Groove Salad (chill)</option>
+          <option value="https://ice1.somafm.com/dronezone-128-mp3">Drone Zone (deep focus)</option>
+          <option value="https://ice1.somafm.com/deepspaceone-128-mp3">Deep Space One</option>
+          <option value="https://stream.radioparadise.com/mp3-128">Radio Paradise</option>
+          <option value="custom">Custom stream link...</option>
+        </select>
+        <button class="btn primary sm" id="radioBtn">Play</button>
+      </div>
+      <input id="radioUrl" class="field" type="url" inputmode="url" placeholder="Paste a station stream link (https://...)" hidden>
+      <label class="slider"><span>Volume</span><input id="radioVol" type="range" min="0" max="1" step="0.05" value="0.7"></label>
+      <div class="note" id="radioStatus">Stopped</div>
+
+      <div class="sep"></div>
+
+      <div class="sec-h">Spotify</div>
+      <div class="radio-row">
+        <input id="spUrl" class="field" type="url" inputmode="url" placeholder="Paste a Spotify playlist, album or track link">
+        <button class="btn primary sm" id="spLoad">Load</button>
+      </div>
+      <div class="note" id="spMsg"></div>
+      <iframe id="spFrame" title="Spotify player" width="100%" height="152" frameborder="0" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+      <a id="spOpen" class="link" href="https://open.spotify.com" target="_blank" rel="noopener">Open in Spotify app</a>
+    </section>
+  </div>
+
+  <!-- ================= READ TAB ================= -->
+  <div class="pane" data-pane="read" hidden>
+
+    <section class="card">
+      <div class="sec-row">
+        <div>
+          <div class="lbl">JAMB COUNTDOWN</div>
+          <div class="big"><span id="jambDays">0</span> <small>DAYS TO GO</small></div>
+        </div>
+        <div class="pill" id="jambDate">16 Apr 2027</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="sec-h">Today's reading</div>
+      <div class="note" id="todayName"></div>
+      <div id="readToday" class="blocks"></div>
+    </section>
+
+    <section class="card">
+      <div class="sec-h">Weekly timetable</div>
+      <div class="note" id="wkTimes"></div>
+      <div id="readWeek" class="wk"></div>
+      <div class="note">Every subject gets 3 blocks a week. Sunday is for weak topics and past questions. Tap Edit to rename subjects or move the times.</div>
+      <button class="btn sm wide" id="editRead">Edit subjects and times</button>
+    </section>
+  </div>
+
+  <!-- ================= TRAIN TAB ================= -->
+  <div class="pane" data-pane="train" hidden>
+
+    <section class="card">
+      <div class="sec-h">Game time today</div>
       <div class="goal-row">
-        <div class="goal-num" id="goalTxt">0<small>/120 min</small></div>
-        <div class="goal-pct" id="goalPct">0%</div>
+        <div class="goal-num" id="capTxt">0<small>/90 min</small></div>
+        <div class="goal-pct" id="capPct">0%</div>
       </div>
-      <div class="bar"><i id="goalBar"></i></div>
-    </div>
-  </section>
+      <div class="bar amber"><i id="capBar"></i></div>
+      <div class="note" id="capMsg"></div>
+      <div class="chips" id="capBtns">
+        <button class="chip" data-add="15">+15</button>
+        <button class="chip" data-add="30">+30</button>
+        <button class="chip" data-add="60">+60</button>
+        <button class="chip" data-add="-15">Undo 15</button>
+      </div>
+    </section>
 
-  <!-- SOUNDS -->
-  <section class="card sounds">
-    <div class="sec-h">Ambient</div>
-    <div class="chips amb" id="amb">
-      <button class="chip" data-k="light">Light Rain</button>
-      <button class="chip" data-k="heavy">Heavy Rain</button>
-      <button class="chip" data-k="brown">Deep Hum</button>
-    </div>
-    <label class="slider"><span>Volume</span><input id="ambVol" type="range" min="0" max="1" step="0.05" value="0.6"></label>
+    <section class="card">
+      <div class="sec-h">Today's COD training</div>
+      <div class="note" id="trainDay"></div>
+      <div id="trainBlocks" class="blocks"></div>
+    </section>
 
-    <div class="sep"></div>
+    <section class="card">
+      <div class="sec-h">One lesson from today</div>
+      <div class="radio-row">
+        <input id="lessonIn" class="field" type="text" maxlength="140" placeholder="What cost you a death? What is the fix?">
+        <button class="btn primary sm" id="lessonSave">Save</button>
+      </div>
+      <ul id="lessonList" class="lessons"></ul>
+    </section>
 
-    <div class="sec-h">FM Radio</div>
-    <div class="radio-row">
-      <select id="radioSel" aria-label="Station">
-        <option value="https://ice1.somafm.com/groovesalad-128-mp3">Groove Salad (chill)</option>
-        <option value="https://ice1.somafm.com/dronezone-128-mp3">Drone Zone (deep focus)</option>
-        <option value="https://ice1.somafm.com/deepspaceone-128-mp3">Deep Space One</option>
-        <option value="https://stream.radioparadise.com/mp3-128">Radio Paradise</option>
-        <option value="custom">Custom stream link...</option>
-      </select>
-      <button class="btn primary sm" id="radioBtn">Play</button>
-    </div>
-    <input id="radioUrl" class="field" type="url" inputmode="url" placeholder="Paste a station stream link (https://...)" hidden>
-    <label class="slider"><span>Volume</span><input id="radioVol" type="range" min="0" max="1" step="0.05" value="0.7"></label>
-    <div class="note" id="radioStatus">Stopped</div>
-
-    <div class="sep"></div>
-
-    <div class="sec-h">Spotify</div>
-    <div class="radio-row">
-      <input id="spUrl" class="field" type="url" inputmode="url" placeholder="Paste a Spotify playlist, album or track link">
-      <button class="btn primary sm" id="spLoad">Load</button>
-    </div>
-    <div class="note" id="spMsg"></div>
-    <iframe id="spFrame" title="Spotify player" width="100%" height="152" frameborder="0" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-    <a id="spOpen" class="link" href="https://open.spotify.com" target="_blank" rel="noopener">Open in Spotify app</a>
-  </section>
+    <section class="card">
+      <div class="sec-h">My setup</div>
+      <textarea id="setupTxt" class="field area" rows="6" aria-label="My COD setup"></textarea>
+      <div class="note">Saved on this phone as you type.</div>
+    </section>
+  </div>
 
   <footer class="foot-note">Built by Ikogetech</footer>
 </main>
 
+<nav class="nav" aria-label="Sections">
+  <button class="nav-btn on" data-t="focus">
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M9 2.5h6"/></svg>
+    <span>Focus</span>
+  </button>
+  <button class="nav-btn" data-t="read">
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v15H5.5C4.7 19 4 18.300 4 17.500zM20 5.500c0-.8-.7-1.500-1.500-1.500H13v15h5.500c.8 0 1.500-.7 1.500-1.500z"/></svg>
+    <span>Read</span>
+  </button>
+  <button class="nav-btn" data-t="train">
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.500"/><path d="M12 1.500v4M12 18.500v4M1.500 12h4M18.500 12h4"/></svg>
+    <span>Train</span>
+  </button>
+</nav>
+
 <dialog id="dlg">
   <form method="dialog" class="dlg-body" onsubmit="return false">
     <h2>Settings</h2>
+
+    <div class="sec-h sm">Timer</div>
     <label>Focus (min)<input id="sFocus" type="number" min="1" max="180" inputmode="numeric"></label>
     <label>Short break (min)<input id="sShort" type="number" min="1" max="60" inputmode="numeric"></label>
     <label>Long break (min)<input id="sLong" type="number" min="1" max="90" inputmode="numeric"></label>
@@ -143,6 +237,33 @@
     <label>Daily focus goal (min)<input id="sGoal" type="number" min="10" max="600" inputmode="numeric"></label>
     <label class="check"><input id="sAuto" type="checkbox"> Auto-start next session</label>
     <label class="check"><input id="sAwake" type="checkbox"> Keep screen on while running</label>
+
+    <div class="sec-h sm">Reading</div>
+    <label>Subject 1<input id="sSub0" type="text" maxlength="24"></label>
+    <label>Subject 2<input id="sSub1" type="text" maxlength="24"></label>
+    <label>Subject 3<input id="sSub2" type="text" maxlength="24"></label>
+    <label>Subject 4<input id="sSub3" type="text" maxlength="24"></label>
+    <label>Morning starts<input id="sAStart" type="time"></label>
+    <label>Morning length (min)<input id="sALen" type="number" min="30" max="240" step="5" inputmode="numeric"></label>
+    <label>Evening starts<input id="sBStart" type="time"></label>
+    <label>Evening length (min)<input id="sBLen" type="number" min="30" max="240" step="5" inputmode="numeric"></label>
+
+    <div class="sec-h sm">Game</div>
+    <label>Daily game cap (min)<input id="sCap" type="number" min="15" max="300" step="5" inputmode="numeric"></label>
+
+    <div class="sec-h sm">Background</div>
+    <div class="chips" id="bgChips">
+      <button type="button" class="chip" data-bg="aurora">Aurora</button>
+      <button type="button" class="chip" data-bg="video">My video</button>
+      <button type="button" class="chip" data-bg="off">Plain</button>
+    </div>
+    <div class="radio-row">
+      <button type="button" class="btn sm" id="bgPick">Choose video</button>
+      <button type="button" class="btn sm" id="bgClear">Remove</button>
+    </div>
+    <input id="bgFile" type="file" accept="video/*" hidden>
+    <div class="note" id="bgMsg">Pick a short clip (under 60 MB). It is copied into the app and plays silently on a loop.</div>
+
     <div class="dlg-btns">
       <button type="button" class="btn" id="sCancel">Cancel</button>
       <button type="button" class="btn primary" id="sSave">Save</button>
