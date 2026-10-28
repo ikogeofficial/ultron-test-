@@ -1,12 +1,11 @@
 # Ikoge Focus
 
-Glass-black Pomodoro PWA by Ikogetech.
+Glass pomodoro PWA by Ikogetech.
 
-- Focus / short break / long break timer with a gold ring
-- Streak card with a 7-day check row and a daily focus goal
-- Ambient rain and deep hum (generated in the app, works offline)
-- FM radio streams, or paste your own station link
-- Spotify player: paste any playlist, album or track link
+- **Focus tab:** timer with a ring that changes colour per mode, streak card, rain and hum, FM radio, Spotify
+- **Read tab:** JAMB countdown and a reading timetable with no Maths. Rename the 4 subjects and move the times in Settings
+- **Train tab:** COD training plan with a daily class focus, a daily game-time cap, a one-lesson log and a setup note
+- **Background:** moving aurora colours, or pick your own video from your phone (plays silent, on a loop)
 - Installable, works offline (except radio and Spotify)
 
-No build step. Host the folder on GitHub Pages, Netlify or Cloudflare Pages, open the link in Chrome, then Add to Home screen.
+No build step. Host the folder on GitHub Pages, open the link in Chrome, then Add to Home screen.
