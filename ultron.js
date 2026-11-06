@@ -10,17 +10,18 @@ const pad = n => String(n).padStart(2, '0');
 const dkey = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
 const today0 = () => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); };
-const fromKey = k => { const p = k.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const CHECK = '<svg viewBox="0 0 24 24" width="15" height="15"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const hm = m => m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + 'm';
 
-/* ---------- routine data ---------- */
+/* ---------- Ultron app: Today, Streaks, Reading (single entry) ---------- */
 const TASKS = [
   ['t1', 'Prayer + the Word'], ['t2', 'Phone to the store'], ['t3', 'JAMB reading, 2 hours'],
   ['t4', 'Evening prayer'], ['t5', 'Pauline chapter']
 ];
 const BONUS = ['bx', 'Exercise, 20 minutes'];
+const CHECK = '<svg viewBox="0 0 24 24" width="15" height="15"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 let routine = store.get('ul_routine', {});
+const fromKey = k => { const p = k.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
 const cnt = k => { const o = routine[k] || {}; return TASKS.filter(t => o[t[0]]).length; };
 const perfect = k => cnt(k) === 5;
 function runBack(pred) {
@@ -39,7 +40,6 @@ function bestRun(pred) {
   return best;
 }
 
-/* ---------- Today pane ---------- */
 const QUOTES = [
   'Small steps, taken daily, build a strong life.',
   'Show up today. Tomorrow will thank you.',
@@ -106,6 +106,7 @@ pane.addEventListener('click', e => {
   }
 });
 function showToday() {
+  routine = store.get('ul_routine', {});
   $$('.pane').forEach(p => { p.hidden = p !== pane; });
   $$('.nav-btn').forEach(b => b.classList.toggle('on', b.dataset.t === 'today'));
   renderToday();
@@ -118,6 +119,7 @@ $('.nav').addEventListener('click', e => {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible') return;
   if (dkey(today0()) !== lastDay) { lastDay = dkey(today0()); vd = today0(); }
+  routine = store.get('ul_routine', {});
   if (!pane.hidden) renderToday();
 });
 
@@ -176,5 +178,5 @@ function startQuiz() {
 /* ---------- init ---------- */
 showToday();
 startQuiz();
-if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.update())).catch(() => {});
+['streaks.js', 'reading.js'].forEach(f => { const s = document.createElement('script'); s.src = f; document.body.appendChild(s); });
 })();
