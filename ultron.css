@@ -1,0 +1,56 @@
+:root{--v:#a78bfa;--v-rgb:167,139,250;--chrome:#c9d1da}
+body[data-mode="focus"]{--gold:#a78bfa;--gold-rgb:167,139,250}
+body[data-mode="short"]{--gold:#6ee7c8;--gold-rgb:110,231,200}
+body[data-mode="long"]{--gold:#8ab4ff;--gold-rgb:138,180,255}
+body{font-family:Inter,var(--sans)}
+.brand,.big,.goal-num,.hero h1,.q-t{font-family:"Space Grotesk",Inter,var(--sans)}
+.card{-webkit-backdrop-filter:blur(26px) saturate(1.5);backdrop-filter:blur(26px) saturate(1.5);border-color:rgba(255,255,255,.13);box-shadow:0 20px 50px -22px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.14),inset 0 0 40px rgba(var(--v-rgb),.04)}
+.btn.primary{background:linear-gradient(180deg,#b9a2ff,#7c5ce0);color:#0b0714;box-shadow:0 8px 24px -10px rgba(var(--v-rgb),.8)}
+input[type=range]{accent-color:var(--v)}
+.link{color:var(--v)}
+@keyframes rise{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
+.pane:not([hidden])>*{animation:rise .5s cubic-bezier(.2,.8,.2,1) both}
+.pane:not([hidden])>*:nth-child(2){animation-delay:.06s}
+.pane:not([hidden])>*:nth-child(3){animation-delay:.12s}
+.pane:not([hidden])>*:nth-child(4){animation-delay:.18s}
+.pane:not([hidden])>*:nth-child(5){animation-delay:.24s}
+.nav{width:calc(100% - 24px);max-width:436px;justify-content:space-between;gap:2px}
+.nav-btn{flex:1;min-width:0;padding:9px 2px}
+.blk{cursor:pointer;transition:transform .12s,border-color .2s}
+.blk:active{transform:scale(.985)}
+.chk{transition:background .2s,border-color .2s}
+/* today */
+.hero{display:flex;align-items:center;gap:16px}
+.hero-t{flex:1;min-width:0}
+.hero h1{margin:0;font-size:24px;letter-spacing:-.4px}
+.hero .note{margin-top:4px;font-size:13px}
+.ring{width:84px;height:84px;flex:none;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--v) calc(var(--p)*1%),rgba(255,255,255,.1) 0);position:relative;transition:background .4s}
+.ring::after{content:"";position:absolute;inset:7px;border-radius:50%;background:#14121c}
+.ring b{position:relative;z-index:1;font:600 19px "Space Grotesk",var(--sans)}
+.dnav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.dnav .icon-btn{width:40px;height:40px;font-size:18px}
+.dnav .icon-btn[disabled]{opacity:.3}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.stats div{padding:12px 4px;border-radius:14px;background:rgba(0,0,0,.26);border:1px solid var(--glass-b)}
+.stats b{display:block;font:600 22px "Space Grotesk",var(--sans)}
+.stats span{font-size:10px;letter-spacing:.1em;color:var(--mut);text-transform:uppercase}
+.wkbar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:end;height:84px;margin-top:10px}
+.wkbar div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;height:100%;font:10px var(--mono);color:var(--mut)}
+.wkbar i{width:100%;max-width:26px;border-radius:8px;background:rgba(255,255,255,.1);min-height:4px}
+.wkbar i.f{background:linear-gradient(180deg,#c4b0ff,#7c5ce0);box-shadow:0 0 14px rgba(var(--v-rgb),.5)}
+.wkbar .now{color:var(--v)}
+.quote{font-size:15px;line-height:1.55;color:#e6e3f2}
+.go{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.go .btn{padding:13px 4px;font-size:11px;letter-spacing:.06em}
+.bonus .blk{border-style:dashed}
+/* quiz */
+.qz{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,6,14,.78);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);animation:rise .4s both}
+.qz .card{width:100%;max-width:420px;display:flex;flex-direction:column;gap:14px}
+.q-t{font-size:19px;line-height:1.35;margin:0}
+.q-o{display:flex;flex-direction:column;gap:9px}
+.q-o button{text-align:left;padding:14px;border-radius:14px;border:1px solid var(--glass-b);background:rgba(255,255,255,.05);color:var(--txt);font:500 15px Inter,var(--sans);cursor:pointer;transition:background .2s,border-color .2s}
+.q-o button:active{transform:scale(.98)}
+.q-o button.ok{background:rgba(42,212,107,.2);border-color:var(--green)}
+.q-o button.no{background:rgba(255,63,108,.18);border-color:var(--pink)}
+.q-top{display:flex;justify-content:space-between;align-items:center}
+.q-top button{background:none;border:0;color:var(--mut);font:600 12px var(--sans);letter-spacing:.1em;cursor:pointer;padding:6px}
