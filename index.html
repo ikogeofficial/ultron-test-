@@ -12,6 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="ultron.css">
 </head>
 <body data-mode="focus">
 
@@ -211,6 +212,10 @@
 </main>
 
 <nav class="nav" aria-label="Sections">
+  <button class="nav-btn" data-t="today">
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="3"/><path d="M3.5 9.5h17M8 2.5v4M16 2.5v4M8.500 14.500l2.500 2.500 4.500-4.500"/></svg>
+    <span>Today</span>
+  </button>
   <button class="nav-btn on" data-t="focus">
     <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M9 2.5h6"/></svg>
     <span>Focus</span>
@@ -221,7 +226,7 @@
   </button>
   <button class="nav-btn" data-t="train">
     <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.500"/><path d="M12 1.500v4M12 18.500v4M1.500 12h4M18.500 12h4"/></svg>
-    <span>Train</span>
+    <span>Exercise</span>
   </button>
 </nav>
 
@@ -272,5 +277,6 @@
 </dialog>
 
 <script src="app.js"></script>
+<script src="ultron.js"></script>
 </body>
 </html>
