@@ -178,5 +178,5 @@ function startQuiz() {
 /* ---------- init ---------- */
 showToday();
 startQuiz();
-['streaks.js', 'reading.js'].forEach(f => { const s = document.createElement('script'); s.src = f; document.body.appendChild(s); });
+['streaks.js', 'reading.js', 'ultrontab.js'].forEach(f => { const s = document.createElement('script'); s.src = f; document.body.appendChild(s); });
 })();
