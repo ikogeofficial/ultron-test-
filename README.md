@@ -1,11 +1,13 @@
-# Ikoge Focus
+# Ultron
 
-Glass pomodoro PWA by Ikogetech.
+Personal reading, routine and self-discipline app by Ikogetech. Glass UI, dark violet and chrome, Space Grotesk and Inter (self-hosted, works offline).
 
-- **Focus tab:** timer with a ring that changes colour per mode, streak card, rain and hum, FM radio, Spotify
-- **Read tab:** JAMB countdown and a reading timetable with no Maths. Rename the 4 subjects and move the times in Settings
-- **Train tab:** COD training plan with a daily class focus, a daily game-time cap, a one-lesson log and a setup note
-- **Background:** moving aurora colours, or pick your own video from your phone (plays silent, on a loop)
-- Installable, works offline (except radio and Spotify)
+- **Opening quiz:** 5 JAMB questions (Biology, Chemistry, Physics, English) when the app opens. Turn it off in Settings.
+- **Today:** greeting, daily progress ring, the 5 core tasks (plus Exercise as a bonus), reading progress, week overview, quote, past-day review.
+- **Reading:** timer wheel with a full-screen timer, reading timetable, books with pages and progress, JAMB subject tracking, session history.
+- **Streaks:** routine and reading streaks, best streaks, calendar, 14-day chart, consistency stats, and a separate private No Nut November card.
+- **Exercise:** 20-minute workout and Call of Duty training.
+- **Ultron:** the original Ultron assistant interface (`ultron.html`), unchanged.
+- **Data:** saved on the phone. Export, import and reset in Settings.
 
 No build step. Host the folder on GitHub Pages, open the link in Chrome, then Add to Home screen.

@@ -3,31 +3,88 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0c0e10">
+<meta name="theme-color" content="#07080b">
 <meta name="color-scheme" content="dark">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Ikoge Focus</title>
+<title>Ultron</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/space-grotesk-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
-<body data-mode="focus">
+<body data-mode="focus" data-tab="today">
 
 <div class="bg" aria-hidden="true">
   <canvas id="aurora" width="160" height="300"></canvas>
+  <img id="bgImg" alt="" hidden>
   <video id="bgVideo" muted loop playsinline autoplay disablepictureinpicture hidden></video>
   <div class="bg-dim"></div>
 </div>
 
+<!-- ============ OPENING QUIZ ============ -->
+<section id="quiz" class="overlay quiz" hidden aria-label="Opening quiz">
+  <div class="ov-inner">
+    <div class="ov-top">
+      <div class="lbl">WARM-UP QUIZ</div>
+      <button class="ghost" id="quizSkip">Skip</button>
+    </div>
+    <div class="qdots" id="qDots"></div>
+    <div class="qcard" id="qCard"></div>
+    <div class="qfoot">
+      <div class="note" id="qExplain"></div>
+      <button class="btn primary wide" id="qNext" hidden>Next</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FULL-SCREEN TIMER ============ -->
+<section id="focusView" class="overlay focus" hidden aria-label="Timer">
+  <div class="ov-inner">
+    <div class="ov-top">
+      <button class="ghost" id="fvClose" aria-label="Back to app">&#8249; Back</button>
+      <div class="lbl" id="fvTag">FOCUS</div>
+      <button class="icon-btn" id="fvSounds" aria-label="Sounds">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
+      </button>
+    </div>
+    <div class="fv-body">
+      <div class="dialbox">
+        <svg class="dial" viewBox="0 0 320 320" aria-hidden="true">
+          <circle cx="160" cy="160" r="128" class="track"/>
+          <g id="ticks"></g>
+          <circle id="ring" class="arc" cx="160" cy="160" r="128" transform="rotate(-90 160 160)"/>
+          <circle id="knob" class="knob-halo" cx="160" cy="32" r="17"/>
+        </svg>
+        <div class="readout" role="timer" aria-live="off">
+          <div id="modeLabel" class="mode">FOCUS</div>
+          <div id="time" class="time">25:00</div>
+          <div id="cycleTxt" class="cycle">Session 1 of 4</div>
+        </div>
+      </div>
+      <div class="tabs" id="tabs">
+        <button class="tab on" data-m="focus">Focus</button>
+        <button class="tab" data-m="short">Short break</button>
+        <button class="tab" data-m="long">Long break</button>
+      </div>
+      <div class="btnrow">
+        <button class="btn primary" id="startBtn">Start</button>
+        <button class="btn" id="resetBtn">Reset</button>
+      </div>
+      <button class="btn wide ghost-btn" id="finishBtn">Finish and log time</button>
+    </div>
+  </div>
+</section>
+
 <main class="wrap">
 
   <header class="top">
-    <div class="brand">Ikoge<span>Focus</span></div>
+    <div class="brand">Ultron<span>.</span></div>
     <div class="top-actions">
-      <button class="icon-btn" id="fsBtn" aria-label="Full screen">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      <button class="icon-btn" id="sndBtn" aria-label="Sounds">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>
       </button>
       <button class="icon-btn" id="setBtn" aria-label="Settings">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
@@ -35,139 +92,208 @@
     </div>
   </header>
 
-  <!-- ================= FOCUS TAB ================= -->
-  <div class="pane" data-pane="focus">
-
-    <section class="card timer">
-      <svg class="dial" viewBox="0 0 320 320" aria-hidden="true">
-        <circle cx="160" cy="160" r="128" class="track"/>
-        <g id="ticks"></g>
-        <circle id="ring" class="arc" cx="160" cy="160" r="128" transform="rotate(-90 160 160)"/>
-        <circle id="knob" class="knob-halo" cx="160" cy="32" r="17"/>
-      </svg>
-      <div class="readout" role="timer" aria-live="off">
-        <div id="modeLabel" class="mode">FOCUS</div>
-        <div id="time" class="time">25:00</div>
-        <div id="cycleTxt" class="cycle">Session 1 of 4</div>
+  <!-- ================= TODAY ================= -->
+  <div class="pane" data-pane="today">
+    <section class="card hero">
+      <div class="hero-top">
+        <div>
+          <div class="lbl" id="tDate"></div>
+          <h1 id="tGreet" class="h1"></h1>
+        </div>
+        <div class="ringbox" id="tRing"></div>
       </div>
-
-      <div class="tabs" id="tabs">
-        <button class="tab on" data-m="focus">Focus</button>
-        <button class="tab" data-m="short">Short Break</button>
-        <button class="tab" data-m="long">Long Break</button>
-      </div>
-
-      <div class="btnrow">
-        <button class="btn primary" id="startBtn">Start</button>
-        <button class="btn" id="resetBtn">Reset</button>
-      </div>
-
-      <div class="chips" id="chips">
-        <button class="chip" data-min="15">15 Min</button>
-        <button class="chip" data-min="25">25 Min</button>
-        <button class="chip" data-min="45">45 Min</button>
-        <button class="chip" data-min="60">60 Min</button>
-        <button class="chip" data-min="90">90 Min</button>
-      </div>
+      <div class="hero-stats" id="tStats"></div>
     </section>
 
-    <section class="card streak" aria-label="Streak">
-      <div class="streak-head">
-        <div class="flame" aria-hidden="true">
-          <svg viewBox="0 0 48 48" width="46" height="46">
-            <defs><linearGradient id="fg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff5a7a"/><stop offset="1" stop-color="#ff2f63"/></linearGradient></defs>
-            <path fill="url(#fg)" d="M24 3c1.5 6.5 9 9.5 11.5 16.5C38 26.5 34 38 24 41c-10-3-14-14.5-11.5-21.5.9-2.5 2.4-4.4 4.3-6.2.3 3 1.7 5 3.5 6C19.200 13 20.500 7.500 24 3z"/>
-            <path fill="#fff" d="M24 23c1.600 2.600 4.500 4.300 4.500 8a4.500 4.500 0 0 1-9 0c0-3.700 2.900-5.400 4.500-8z"/>
-          </svg>
-        </div>
-        <div class="streak-t">
-          <div class="lbl">STREAK</div>
-          <div class="big"><span id="streakNum">0</span> <small>DAYS</small></div>
-        </div>
-        <div class="foot" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-        </div>
-      </div>
-      <div class="week" id="week"></div>
-      <div class="goal">
-        <div class="lbl">TODAY'S FOCUS</div>
-        <div class="goal-row">
-          <div class="goal-num" id="goalTxt">0<small>/120 min</small></div>
-          <div class="goal-pct" id="goalPct">0%</div>
-        </div>
-        <div class="bar"><i id="goalBar"></i></div>
-      </div>
-    </section>
-
-    <section class="card sounds">
-      <div class="sec-h">Ambient</div>
-      <div class="chips amb" id="amb">
-        <button class="chip" data-k="light">Light Rain</button>
-        <button class="chip" data-k="heavy">Heavy Rain</button>
-        <button class="chip" data-k="brown">Deep Hum</button>
-      </div>
-      <label class="slider"><span>Volume</span><input id="ambVol" type="range" min="0" max="1" step="0.05" value="0.6"></label>
-
-      <div class="sep"></div>
-
-      <div class="sec-h">FM Radio</div>
-      <div class="radio-row">
-        <select id="radioSel" aria-label="Station">
-          <option value="https://ice1.somafm.com/groovesalad-128-mp3">Groove Salad (chill)</option>
-          <option value="https://ice1.somafm.com/dronezone-128-mp3">Drone Zone (deep focus)</option>
-          <option value="https://ice1.somafm.com/deepspaceone-128-mp3">Deep Space One</option>
-          <option value="https://stream.radioparadise.com/mp3-128">Radio Paradise</option>
-          <option value="custom">Custom stream link...</option>
-        </select>
-        <button class="btn primary sm" id="radioBtn">Play</button>
-      </div>
-      <input id="radioUrl" class="field" type="url" inputmode="url" placeholder="Paste a station stream link (https://...)" hidden>
-      <label class="slider"><span>Volume</span><input id="radioVol" type="range" min="0" max="1" step="0.05" value="0.7"></label>
-      <div class="note" id="radioStatus">Stopped</div>
-
-      <div class="sep"></div>
-
-      <div class="sec-h">Spotify</div>
-      <div class="radio-row">
-        <input id="spUrl" class="field" type="url" inputmode="url" placeholder="Paste a Spotify playlist, album or track link">
-        <button class="btn primary sm" id="spLoad">Load</button>
-      </div>
-      <div class="note" id="spMsg"></div>
-      <iframe id="spFrame" title="Spotify player" width="100%" height="152" frameborder="0" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
-      <a id="spOpen" class="link" href="https://open.spotify.com" target="_blank" rel="noopener">Open in Spotify app</a>
-    </section>
-  </div>
-
-  <!-- ================= READ TAB ================= -->
-  <div class="pane" data-pane="read" hidden>
+    <section class="card quote" id="tQuote"></section>
 
     <section class="card">
       <div class="sec-row">
-        <div>
-          <div class="lbl">JAMB COUNTDOWN</div>
-          <div class="big"><span id="jambDays">0</span> <small>DAYS TO GO</small></div>
-        </div>
-        <div class="pill" id="jambDate">16 Apr 2027</div>
+        <div class="sec-h" id="tTasksTitle">Today's routine</div>
+        <div class="pill" id="tTasksCount"></div>
       </div>
+      <div class="daystrip" id="tDays"></div>
+      <div id="tTasks" class="tasks"></div>
     </section>
 
     <section class="card">
-      <div class="sec-h">Today's reading</div>
-      <div class="note" id="todayName"></div>
-      <div id="readToday" class="blocks"></div>
+      <div class="sec-h">Reading today</div>
+      <div id="tReading"></div>
     </section>
 
     <section class="card">
-      <div class="sec-h">Weekly timetable</div>
-      <div class="note" id="wkTimes"></div>
-      <div id="readWeek" class="wk"></div>
-      <div class="note">Every subject gets 3 blocks a week. Sunday is for weak topics and past questions. Tap Edit to rename subjects or move the times.</div>
-      <button class="btn sm wide" id="editRead">Edit subjects and times</button>
+      <div class="sec-h">This week</div>
+      <div class="week" id="tWeek"></div>
+    </section>
+
+    <section class="card">
+      <div class="sec-h">Quick actions</div>
+      <div class="quick" id="tQuick">
+        <button class="qa" data-go="read-plan"><b>Read</b><span>Start a timer</span></button>
+        <button class="qa" data-act="quiz"><b>Quiz</b><span>5 questions</span></button>
+        <button class="qa" data-go="exercise"><b>Move</b><span>20 min</span></button>
+        <button class="qa" data-go="ultron"><b>Ultron</b><span>Open assistant</span></button>
+      </div>
     </section>
   </div>
 
-  <!-- ================= TRAIN TAB ================= -->
-  <div class="pane" data-pane="train" hidden>
+  <!-- ================= READING ================= -->
+  <div class="pane" data-pane="read" hidden>
+    <div class="seg" id="rSeg" role="tablist">
+      <button class="on" data-sub="plan">Plan</button>
+      <button data-sub="books">Books</button>
+      <button data-sub="jamb">JAMB</button>
+      <button data-sub="log">History</button>
+    </div>
+
+    <!-- plan -->
+    <div class="sub" data-sub="plan">
+      <section class="card timerpick">
+        <div class="sec-row">
+          <div class="sec-h">Pick a timer</div>
+          <div class="pill" id="wheelLbl">25 min</div>
+        </div>
+        <div class="wheel-wrap">
+          <div class="wheel-sel" aria-hidden="true"></div>
+          <div class="wheel" id="wheel" tabindex="0" aria-label="Minutes"></div>
+        </div>
+        <div class="chips" id="chips">
+          <button class="chip" data-min="15">15</button>
+          <button class="chip" data-min="25">25</button>
+          <button class="chip" data-min="45">45</button>
+          <button class="chip" data-min="60">60</button>
+          <button class="chip" data-min="90">90</button>
+        </div>
+        <label class="fld">Reading for
+          <select id="forSel"></select>
+        </label>
+        <button class="btn primary wide" id="tpStart">Start reading</button>
+      </section>
+
+      <section class="card">
+        <div class="sec-row">
+          <div class="sec-h">Reading timetable</div>
+          <button class="ghost" id="editRead">Edit</button>
+        </div>
+        <div class="note" id="wkTimes"></div>
+        <div class="daysel" id="ttDays"></div>
+        <div class="timeline" id="ttList"></div>
+        <div class="note">Every subject gets 3 blocks a week. Sunday is for weak topics and past questions.</div>
+      </section>
+
+      <section class="card">
+        <div class="sec-h">Week at a glance</div>
+        <div id="readWeek" class="wk"></div>
+      </section>
+    </div>
+
+    <!-- books -->
+    <div class="sub" data-sub="books" hidden>
+      <section class="card">
+        <div class="sec-row">
+          <div class="sec-h">My books</div>
+          <button class="btn primary sm" id="addBook">Add book</button>
+        </div>
+        <div id="bookStats" class="mini-stats"></div>
+        <div id="bookList" class="booklist"></div>
+      </section>
+      <section class="card">
+        <div class="sec-h">Completed</div>
+        <div id="bookDone" class="booklist"></div>
+      </section>
+    </div>
+
+    <!-- jamb -->
+    <div class="sub" data-sub="jamb" hidden>
+      <section class="card">
+        <div class="sec-row">
+          <div>
+            <div class="lbl">JAMB COUNTDOWN</div>
+            <div class="big"><span id="jambDays">0</span> <small>DAYS TO GO</small></div>
+          </div>
+          <div class="pill" id="jambDate">16 Apr 2027</div>
+        </div>
+      </section>
+      <div id="jambSubjects" class="subjects"></div>
+    </div>
+
+    <!-- history -->
+    <div class="sub" data-sub="log" hidden>
+      <section class="card">
+        <div class="sec-row">
+          <div class="sec-h">Reading stats</div>
+          <button class="btn sm" id="addSession">Log session</button>
+        </div>
+        <div id="logStats" class="mini-stats"></div>
+      </section>
+      <section class="card">
+        <div class="sec-h">History</div>
+        <div id="logList" class="loglist"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ================= STREAKS ================= -->
+  <div class="pane" data-pane="streaks" hidden>
+    <section class="card">
+      <div class="sec-h">Streaks</div>
+      <div class="streak2" id="sTop"></div>
+    </section>
+
+    <section class="card">
+      <div class="sec-row">
+        <div class="sec-h" id="calTitle">Calendar</div>
+        <div class="monthnav">
+          <button class="icon-btn sm" id="calPrev" aria-label="Previous month">&#8249;</button>
+          <button class="icon-btn sm" id="calNext" aria-label="Next month">&#8250;</button>
+        </div>
+      </div>
+      <div class="cal" id="cal"></div>
+      <div class="legend"><i class="lg l0"></i>None <i class="lg l1"></i>Some <i class="lg l2"></i>Most <i class="lg l3"></i>Full</div>
+      <div class="note">Tap a day to open it in Today.</div>
+    </section>
+
+    <section class="card">
+      <div class="sec-h">Last 14 days</div>
+      <div class="chart" id="chart14"></div>
+      <div class="legend"><i class="lg l3"></i>Routine %<i class="lg viol"></i>Reading minutes</div>
+    </section>
+
+    <section class="card">
+      <div class="sec-h">Consistency</div>
+      <div class="mini-stats" id="consist"></div>
+      <div class="sec-h sm">Weekly history</div>
+      <div id="weeks" class="weeks"></div>
+    </section>
+
+    <section class="card nnn" id="nnnCard">
+      <div class="sec-row">
+        <div>
+          <div class="sec-h">No Nut November</div>
+          <div class="note" id="nnnSub">A private challenge, separate from your other streaks.</div>
+        </div>
+        <button class="icon-btn sm" id="nnnEye" aria-label="Hide or show details">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div id="nnnBody"></div>
+    </section>
+  </div>
+
+  <!-- ================= EXERCISE ================= -->
+  <div class="pane" data-pane="exercise" hidden>
+    <section class="card">
+      <div class="sec-row">
+        <div class="sec-h">20-minute workout</div>
+        <div class="pill" id="exState"></div>
+      </div>
+      <div id="exBlocks" class="blocks"></div>
+      <button class="btn primary wide" id="exStart">Start 20 minutes</button>
+      <button class="btn wide" id="exMark">Mark done</button>
+      <div class="week" id="exWeek"></div>
+    </section>
+
+    <div class="sec-h pad">Call of Duty training</div>
 
     <section class="card">
       <div class="sec-h">Game time today</div>
@@ -207,38 +333,60 @@
     </section>
   </div>
 
-  <footer class="foot-note">Built by Ikogetech</footer>
+  <!-- ================= ULTRON ================= -->
+  <div class="pane ultron-pane" data-pane="ultron" hidden>
+    <iframe id="ultronFrame" title="Ultron" data-src="ultron.html"></iframe>
+  </div>
+
 </main>
 
 <nav class="nav" aria-label="Sections">
-  <button class="nav-btn on" data-t="focus">
-    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5M9 2.5h6"/></svg>
-    <span>Focus</span>
+  <i class="nav-ind" id="navInd"></i>
+  <button class="nav-btn on" data-t="today">
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="16" rx="3"/><path d="M8 2.5v4M16 2.5v4M3.5 10h17"/></svg>
+    <span>Today</span>
   </button>
   <button class="nav-btn" data-t="read">
-    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v15H5.5C4.7 19 4 18.300 4 17.500zM20 5.500c0-.8-.7-1.500-1.500-1.500H13v15h5.500c.8 0 1.500-.7 1.500-1.500z"/></svg>
-    <span>Read</span>
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5C4 4.7 4.7 4 5.5 4H11v15H5.5C4.7 19 4 18.3 4 17.5zM20 5.5c0-.8-.7-1.5-1.5-1.5H13v15h5.5c.8 0 1.5-.7 1.5-1.5z"/></svg>
+    <span>Reading</span>
   </button>
-  <button class="nav-btn" data-t="train">
-    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.500"/><path d="M12 1.500v4M12 18.500v4M1.500 12h4M18.500 12h4"/></svg>
-    <span>Train</span>
+  <button class="nav-btn" data-t="streaks">
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.6 3.200 4.500 4.700 5.700 8.300 1.300 3.900-.8 8.700-5.700 9.700-4.900-1-7-5.800-5.700-9.700.5-1.300 1.200-2.200 2.100-3.100.1 1.500.8 2.500 1.700 3C10.100 8 10.700 5 12 3z"/></svg>
+    <span>Streaks</span>
+  </button>
+  <button class="nav-btn" data-t="exercise">
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11"/></svg>
+    <span>Exercise</span>
+  </button>
+  <button class="nav-btn" data-t="ultron">
+    <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/><path d="M12 3.500v3M12 17.500v3M3.500 12h3M17.500 12h3"/></svg>
+    <span>Ultron</span>
   </button>
 </nav>
 
-<dialog id="dlg">
+<!-- ================= DIALOGS ================= -->
+<dialog id="dlgSettings" class="sheet">
   <form method="dialog" class="dlg-body" onsubmit="return false">
     <h2>Settings</h2>
+
+    <div class="sec-h sm">You</div>
+    <label>Your name<input id="sName" type="text" maxlength="20"></label>
+    <label class="check"><input id="sQuiz" type="checkbox"> Open the quiz when the app starts</label>
+    <label>Quiz questions<input id="sQuizN" type="number" min="3" max="10" inputmode="numeric"></label>
+
+    <div class="sec-h sm">Routine</div>
+    <label>Streak counts at (core tasks)<input id="sThresh" type="number" min="1" max="5" inputmode="numeric"></label>
 
     <div class="sec-h sm">Timer</div>
     <label>Focus (min)<input id="sFocus" type="number" min="1" max="180" inputmode="numeric"></label>
     <label>Short break (min)<input id="sShort" type="number" min="1" max="60" inputmode="numeric"></label>
     <label>Long break (min)<input id="sLong" type="number" min="1" max="90" inputmode="numeric"></label>
     <label>Long break every (sessions)<input id="sEvery" type="number" min="2" max="8" inputmode="numeric"></label>
-    <label>Daily focus goal (min)<input id="sGoal" type="number" min="10" max="600" inputmode="numeric"></label>
+    <label>Daily reading goal (min)<input id="sGoal" type="number" min="10" max="600" inputmode="numeric"></label>
     <label class="check"><input id="sAuto" type="checkbox"> Auto-start next session</label>
     <label class="check"><input id="sAwake" type="checkbox"> Keep screen on while running</label>
 
-    <div class="sec-h sm">Reading</div>
+    <div class="sec-h sm">JAMB subjects</div>
     <label>Subject 1<input id="sSub0" type="text" maxlength="24"></label>
     <label>Subject 2<input id="sSub1" type="text" maxlength="24"></label>
     <label>Subject 3<input id="sSub2" type="text" maxlength="24"></label>
@@ -253,16 +401,32 @@
 
     <div class="sec-h sm">Background</div>
     <div class="chips" id="bgChips">
-      <button type="button" class="chip" data-bg="aurora">Aurora</button>
+      <button type="button" class="chip" data-bg="violet">Violet</button>
+      <button type="button" class="chip" data-bg="midnight">Midnight</button>
+      <button type="button" class="chip" data-bg="ocean">Ocean</button>
+      <button type="button" class="chip" data-bg="ember">Ember</button>
+      <button type="button" class="chip" data-bg="chrome">Chrome</button>
+      <button type="button" class="chip" data-bg="image">My image</button>
       <button type="button" class="chip" data-bg="video">My video</button>
       <button type="button" class="chip" data-bg="off">Plain</button>
     </div>
     <div class="radio-row">
+      <button type="button" class="btn sm" id="bgPickImg">Choose image</button>
       <button type="button" class="btn sm" id="bgPick">Choose video</button>
       <button type="button" class="btn sm" id="bgClear">Remove</button>
     </div>
+    <input id="bgFileImg" type="file" accept="image/*" hidden>
     <input id="bgFile" type="file" accept="video/*" hidden>
-    <div class="note" id="bgMsg">Pick a short clip (under 60 MB). It is copied into the app and plays silently on a loop.</div>
+    <div class="note" id="bgMsg">Pick a photo or a short clip (under 60 MB). It is copied into the app. Videos play silently on a loop.</div>
+
+    <div class="sec-h sm">Your data</div>
+    <div class="radio-row">
+      <button type="button" class="btn sm" id="dExport">Export backup</button>
+      <button type="button" class="btn sm" id="dImport">Import backup</button>
+    </div>
+    <input id="dFile" type="file" accept="application/json,.json" hidden>
+    <button type="button" class="btn sm wide danger" id="dReset">Reset all app data</button>
+    <div class="note" id="dMsg"></div>
 
     <div class="dlg-btns">
       <button type="button" class="btn" id="sCancel">Cancel</button>
@@ -271,6 +435,97 @@
   </form>
 </dialog>
 
+<dialog id="dlgSounds" class="sheet">
+  <form method="dialog" class="dlg-body" onsubmit="return false">
+    <h2>Sounds</h2>
+    <div class="sec-h sm">Ambient</div>
+    <div class="chips amb" id="amb">
+      <button type="button" class="chip" data-k="light">Light rain</button>
+      <button type="button" class="chip" data-k="heavy">Heavy rain</button>
+      <button type="button" class="chip" data-k="brown">Deep hum</button>
+    </div>
+    <label class="slider"><span>Volume</span><input id="ambVol" type="range" min="0" max="1" step="0.05" value="0.6"></label>
+
+    <div class="sec-h sm">FM radio</div>
+    <div class="radio-row">
+      <select id="radioSel" aria-label="Station">
+        <option value="https://ice1.somafm.com/groovesalad-128-mp3">Groove Salad (chill)</option>
+        <option value="https://ice1.somafm.com/dronezone-128-mp3">Drone Zone (deep focus)</option>
+        <option value="https://ice1.somafm.com/deepspaceone-128-mp3">Deep Space One</option>
+        <option value="https://stream.radioparadise.com/mp3-128">Radio Paradise</option>
+        <option value="custom">Custom stream link...</option>
+      </select>
+      <button type="button" class="btn primary sm" id="radioBtn">Play</button>
+    </div>
+    <input id="radioUrl" class="field" type="url" inputmode="url" placeholder="Paste a station stream link (https://...)" hidden>
+    <label class="slider"><span>Volume</span><input id="radioVol" type="range" min="0" max="1" step="0.05" value="0.7"></label>
+    <div class="note" id="radioStatus">Stopped</div>
+
+    <div class="sec-h sm">Spotify</div>
+    <div class="radio-row">
+      <input id="spUrl" class="field" type="url" inputmode="url" placeholder="Paste a Spotify playlist, album or track link">
+      <button type="button" class="btn primary sm" id="spLoad">Load</button>
+    </div>
+    <div class="note" id="spMsg"></div>
+    <iframe id="spFrame" title="Spotify player" width="100%" height="152" frameborder="0" loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>
+    <a id="spOpen" class="link" href="https://open.spotify.com" target="_blank" rel="noopener">Open in Spotify app</a>
+    <div class="note">Radio and Spotify need internet. Rain and hum work offline.</div>
+
+    <div class="dlg-btns one">
+      <button type="button" class="btn primary" id="sndClose">Done</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlgBook" class="sheet">
+  <form method="dialog" class="dlg-body" onsubmit="return false">
+    <h2 id="bkHead">Add a book</h2>
+    <label>Title<input id="bkTitle" type="text" maxlength="80"></label>
+    <label>Author<input id="bkAuthor" type="text" maxlength="60"></label>
+    <label>Category
+      <select id="bkCat">
+        <option>JAMB</option><option>Bible</option><option>Self-growth</option>
+        <option>Fiction</option><option>Tech</option><option>Other</option>
+      </select>
+    </label>
+    <label>Total pages<input id="bkTotal" type="number" min="1" max="5000" inputmode="numeric"></label>
+    <label>Goal (pages a day)<input id="bkGoal" type="number" min="0" max="500" inputmode="numeric"></label>
+    <div class="note" id="bkMsg"></div>
+    <div class="dlg-btns">
+      <button type="button" class="btn" id="bkCancel">Cancel</button>
+      <button type="button" class="btn primary" id="bkSave">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlgSession" class="sheet">
+  <form method="dialog" class="dlg-body" onsubmit="return false">
+    <h2 id="seHead">Log a session</h2>
+    <div class="note" id="seNote"></div>
+    <label>Reading for<select id="seFor"></select></label>
+    <label>Minutes<input id="seMin" type="number" min="1" max="600" inputmode="numeric"></label>
+    <label>Pages read<input id="sePages" type="number" min="0" max="2000" inputmode="numeric"></label>
+    <label>Date<input id="seDate" type="date"></label>
+    <div class="note" id="seMsg"></div>
+    <div class="dlg-btns">
+      <button type="button" class="btn" id="seCancel">Cancel</button>
+      <button type="button" class="btn primary" id="seSave">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlgConfirm" class="sheet small">
+  <form method="dialog" class="dlg-body" onsubmit="return false">
+    <h2 id="cfHead">Are you sure?</h2>
+    <div class="note" id="cfText"></div>
+    <div class="dlg-btns">
+      <button type="button" class="btn" id="cfNo">Cancel</button>
+      <button type="button" class="btn primary" id="cfYes">Confirm</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="data.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

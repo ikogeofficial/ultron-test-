@@ -1,13 +1,13 @@
 {
-  "name": "Ikoge Focus",
-  "short_name": "Focus",
-  "description": "Pomodoro focus timer with rain, FM radio and Spotify.",
+  "name": "Ultron",
+  "short_name": "Ultron",
+  "description": "Reading, routine and self-discipline system with the Ultron assistant.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0f1011",
-  "theme_color": "#0f1011",
+  "background_color": "#07080b",
+  "theme_color": "#07080b",
   "icons": [
     { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
     { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }

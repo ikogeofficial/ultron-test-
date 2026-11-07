@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ultron">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Ultron</title>
+<style>
+:root{--bg:#000;--fg:#f3f5f7;--dim:#c4c8cd;--muted:#8d939b;--line:#2a2f36;--appH:100dvh;
+--ease-out:cubic-bezier(.22,1,.36,1);--dur-fast:140ms;--dur-base:260ms}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);overflow:hidden;touch-action:manipulation;
+font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+body{user-select:none;-webkit-user-select:none}
+button,input{font:inherit}
+#app{display:flex;flex-direction:column;height:var(--appH);max-width:480px;margin:0 auto;position:relative;overflow:hidden}
+.top{display:flex;align-items:center;justify-content:space-between;flex:0 0 auto;
+padding:calc(env(safe-area-inset-top,0px) + 6px) 18px 0;height:calc(54px + env(safe-area-inset-top,0px))}
+.menu{width:44px;height:44px;margin-left:-10px;border:0;background:none;color:var(--fg);display:grid;place-items:center}
+.mood{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.orbzone{flex:0 0 45%;display:grid;place-items:center;min-height:0}
+#orb{--o:min(82vw,calc(var(--appH)*.4),360px);display:block;width:var(--o);height:var(--o);cursor:pointer}
+.reply{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;gap:12px;padding:0 28px 14px;overflow:hidden;touch-action:pan-y;
+-webkit-mask-image:linear-gradient(to bottom,transparent 0,#000 40%);mask-image:linear-gradient(to bottom,transparent 0,#000 40%)}
+.old{font-size:15px;line-height:1.45;color:var(--muted)}
+.o2{opacity:.3}.o1{opacity:.55}
+.new{font-size:18px;line-height:1.55;letter-spacing:-.01em;color:var(--fg)}
+.dock{flex:0 0 auto;display:flex;align-items:center;gap:10px;padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--bg)}
+.txt{flex:1;min-width:0;height:48px;border:1px solid var(--line);border-radius:24px;background:transparent;color:var(--fg);
+padding:0 18px;font-size:16px;outline:0;-webkit-user-select:text;user-select:text;transition:border-color var(--dur-base)}
+.txt::placeholder{color:#747a82}.txt:focus{border-color:#565b62}
+.mic{flex:0 0 48px;width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--fg);
+display:grid;place-items:center;padding:0;transition:transform var(--dur-fast) var(--ease-out),background var(--dur-base),color var(--dur-base)}
+.mic:active{transform:scale(.97)}
+.mic[aria-pressed=true]{background:var(--fg);color:#000;border-color:var(--fg)}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity var(--dur-base) var(--ease-out);z-index:20}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:0 auto;height:min(72dvh,620px);background:var(--bg);
+border-top:1px solid var(--line);padding:6px 26px calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;
+transform:translateY(105%);transition:transform var(--dur-base) var(--ease-out);z-index:30}
+.open.scrim{opacity:1;pointer-events:auto}.open.sheet{transform:none}
+.handle{align-self:center;width:44px;height:28px;border:0;background:none;display:grid;place-items:center;padding:0}
+.handle i{display:block;width:34px;height:3px;border-radius:9px;background:#565b62}
+.list{overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:24px;padding-top:10px;touch-action:pan-y;user-select:text;-webkit-user-select:text}
+.list p{margin:0;font-size:16px;line-height:1.5;color:var(--dim)}
+.list small{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.kb .orbzone{flex-basis:96px}.kb #orb{--o:80px}.kb .old{display:none}.kb .reply{padding-bottom:6px}
+@media (prefers-reduced-motion:reduce){.sheet{transition:opacity var(--dur-base);opacity:0}.open.sheet{opacity:1}.mic,.txt,.scrim{transition-duration:.01ms}}
+
+.dock.typing .mic .mi,.mic .snd{display:none}.dock.typing .mic .snd{display:block}
+.dock.typing .mic{background:var(--fg);color:#000;border-color:var(--fg)}
+.mscrim{position:fixed;inset:0;background:rgba(0,0,0,.6);opacity:0;pointer-events:none;transition:opacity var(--dur-base) var(--ease-out);z-index:40}
+.mdraw{position:fixed;top:0;left:0;bottom:0;width:min(300px,82vw);background:var(--bg);border-right:1px solid var(--line);z-index:50;
+padding:calc(env(safe-area-inset-top,0px) + 22px) 22px 22px;transform:translateX(-105%);transition:transform var(--dur-base) var(--ease-out);overflow-y:auto}
+.mdraw.open{transform:none}.mscrim.open{opacity:1;pointer-events:auto}
+.mt{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.mrow{display:block;width:100%;text-align:left;border:0;border-top:1px solid #15181c;background:none;color:var(--fg);padding:16px 0}
+.mrow b{display:block;font-weight:500;font-size:16px}.mrow span{display:block;font-size:13px;color:var(--muted);margin-top:4px}
+@media (prefers-reduced-motion:reduce){.mdraw{transition:opacity var(--dur-base);opacity:0}.mdraw.open{opacity:1}.mscrim{transition-duration:.01ms}}
+/* auto layouts: data-device = phone|tablet|desktop, data-layout = phone|tablet|panel (set by script) */
+.ht{display:none}
+html[data-device=tablet] #app{max-width:720px}
+html[data-device=tablet] #orb{--o:min(60vw,calc(var(--appH)*.42),460px)}
+html[data-device=tablet] .new{font-size:20px}html[data-device=tablet] .old{font-size:16px}
+html[data-layout=panel] #app{max-width:none;margin:0;padding-right:340px}
+html[data-layout=panel] #orb{--o:min(46vw,calc(var(--appH)*.44),480px)}
+html[data-layout=panel] .orbzone{flex-basis:48%}
+html[data-layout=panel] .reply,html[data-layout=panel] .dock{width:100%;max-width:720px;margin:0 auto}
+html[data-layout=panel] .reply{padding:0 28px 18px}
+html[data-layout=panel] .new{font-size:20px}
+html[data-layout=panel] .dock{padding-bottom:28px}
+html[data-layout=panel] .sheet{left:auto;top:0;right:0;bottom:0;width:340px;max-width:none;height:auto;margin:0;transform:none;transition:none;
+border-top:0;border-left:1px solid var(--line);padding:26px 24px 24px;opacity:1}
+html[data-layout=panel] .scrim,html[data-layout=panel] .handle{display:none}
+html[data-layout=panel] .ht{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+html[data-device=desktop] .mic,html[data-device=desktop] #orb,html[data-device=desktop] .txt{cursor:pointer}
+html[data-device=desktop] .txt{cursor:text}
+@media (prefers-reduced-motion:reduce){html[data-layout=panel] .sheet{opacity:1}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <button class="menu" type="button" aria-label="Menu"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 8h16M4 16h16"/></svg></button>
+    <div class="mood" id="mood" aria-live="polite">Idle</div>
+  </header>
+  <div class="orbzone"><canvas id="orb" aria-label="Ultron orb. Tap to preview moods."></canvas></div>
+  <section class="reply" id="reply" aria-label="Latest replies">
+    <div class="old o2">Checking your schedule.</div>
+    <div class="old o1">Two events found for today.</div>
+    <div class="new">Good morning. You have a team sync at 2:00 PM and a project review at 4:30 PM. Tell me if you want either moved.</div>
+  </section>
+  <footer class="dock">
+    <input class="txt" id="txt" type="text" enterkeyhint="send" placeholder="Type a message" autocomplete="off" aria-label="Type a message">
+    <button class="mic" id="mic" type="button" aria-pressed="false" aria-label="Microphone">
+      <svg class="mi" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg>
+    <svg class="snd" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </button>
+  </footer>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="mscrim" id="mscrim"></div>
+<nav class="mdraw" id="mdraw" aria-label="Menu" aria-hidden="true">
+  <div class="mt">Ultron</div>
+  <button type="button" class="mrow"><b>Things to remember</b><span>Sample: prefers short spoken replies</span><span>Sample: tablet test on Sunday</span></button>
+  <button type="button" class="mrow"><b>Connections</b><span>Google, Calendar, Gmail</span></button>
+  <button type="button" class="mrow"><b>Voice</b><span>Phone voice (default)</span></button>
+  <button type="button" class="mrow" id="newchat"><b>New chat</b></button>
+</nav>
+<aside class="sheet" id="sheet" role="dialog" aria-label="Conversation history" aria-hidden="true">
+  <button class="handle" id="handle" type="button" aria-label="Close history"><i></i></button>
+  <div class="ht">History</div>
+  <div class="list" id="list">
+    <p><small>09:15</small>Good morning. All systems are quiet today.</p>
+    <p><small>10:30</small>What is the weather in Warri today?</p>
+    <p><small>10:31</small>Partly cloudy, high of 31°C, light wind.</p>
+    <p><small>13:15</small>Summarise my unread emails.</p>
+    <p><small>13:16</small>Three need a reply. The rest can wait.</p>
+  </div>
+</aside>
+<script>
+(function(){
+  var cv=document.getElementById('orb'),ctx=cv.getContext('2d');
+  var S=0,img,buf;
+  function resize(){
+    var css=cv.clientWidth||300;
+    S=Math.max(64,Math.min(Math.round(css*(window.devicePixelRatio||1)),560));
+    cv.width=S;cv.height=S;
+    img=ctx.createImageData(S,S);buf=img.data;
+  }
+  resize();var lw=cv.clientWidth;function chk(){var w=cv.clientWidth;if(w&&w!==lw){lw=w;resize()}}
+  if(window.ResizeObserver)new ResizeObserver(chk).observe(cv);window.addEventListener('resize',chk);
+
+  // particles: thousands of tiny dots on a hollow, slightly fuzzy shell
+  var N=3600,X=new Float32Array(N),Y=new Float32Array(N),Z=new Float32Array(N),SH=new Float32Array(N),PH=new Float32Array(N);
+  for(var i=0;i<N;i++){
+    var z=Math.random()<0.7?(2*Math.random()-1):Math.sin((Math.random()-0.5)*Math.PI); // some bunching at the poles
+    var a=Math.random()*Math.PI*2,rad=Math.sqrt(1-z*z);
+    X[i]=rad*Math.cos(a);Y[i]=z;Z[i]=rad*Math.sin(a);
+    SH[i]=1-0.14*Math.pow(Math.random(),2.2);
+    PH[i]=Math.random()*6.283;
+  }
+
+  // voice level sources
+  var manual=false,ext=null,micLevel=0,analyser=null,data=null;
+  function clamp(v,a,b){return v<a?a:v>b?b:v}
+  window.orb={setLevel:function(v){ext=(v==null)?null:clamp(+v,0,1)}}; // app can feed 0..1 here
+
+  var lvl=0,wt=0,spin=0,last=0;
+  function put(ix,iy,v,b){
+    if(ix<0||iy<0||ix>=S||iy>=S)return;
+    var k=(iy*S+ix)*4;
+    if(buf[k]<v){buf[k]=v;buf[k+1]=v;buf[k+2]=Math.min(255,v+b);buf[k+3]=255}
+  }
+
+  function draw(ts){
+    var t=ts/1000,dt=Math.min(0.05,last?t-last:0.016);last=t;
+
+    if(analyser){
+      analyser.getByteTimeDomainData(data);
+      var s=0;for(var q=0;q<data.length;q++){var d=(data[q]-128)/128;s+=d*d}
+      micLevel=clamp((Math.sqrt(s/data.length)-0.015)*9,0,1);
+    }
+    var target=manual?clamp(0.6+0.3*Math.sin(t*7.3)*Math.sin(t*2.9),0,1):(ext!==null?ext:micLevel);
+
+    // fast open when speaking, slow settle back
+    lvl+=(target-lvl)*(1-Math.exp(-dt*(target>lvl?14:2.6)));
+    wt+=dt*(0.5+1.5*lvl);                 // wave time: slow & soft when silent, quicker when speaking
+    spin+=dt*(0.16+0.22*lvl);
+
+    var scale=1+0.34*lvl+0.018*Math.sin(t*1.1);          // expands on voice, gentle breathing
+    var body=0.07+0.06*lvl;                              // amoeba-like irregular body
+    var wave=0.035+0.085*lvl;                            // wave running through the orb
+    var R=S*0.5/1.62,cx=S*0.5,cy=S*0.5;
+
+    buf.fill(0);
+    var cs=Math.cos(spin),sn=Math.sin(spin),ct=Math.cos(0.38),st=Math.sin(0.38);
+
+    for(var i=0;i<N;i++){
+      var x=X[i],y=Y[i],z=Z[i];
+      var a=Math.sin(x*1.9+wt*0.55+1.3)*Math.sin(y*1.6-wt*0.45)*0.6+Math.sin(z*2.2+wt*0.38+x*1.1)*0.5;
+      var w=Math.sin(y*3.2-wt*1.9+x*1.4);
+      var r=SH[i]*(1+body*a+wave*w+0.012*Math.sin(t*2.6+PH[i]))*scale;
+
+      var x1=x*cs+z*sn,z1=-x*sn+z*cs;
+      var y2=y*ct-z1*st,z2=y*st+z1*ct;
+      var p=1/(1-0.18*z2*r);
+      var sx=(cx+x1*r*p*R)|0,sy=(cy+y2*r*p*R)|0;
+      var v=(90+165*(z2*0.5+0.5))|0;
+
+      put(sx,sy,v,10);
+      if(z2>0.25){put(sx+1,sy,v,10);put(sx,sy+1,v,10)}
+    }
+    ctx.putImageData(img,0,0);
+  }
+  var errShown=false;
+  function frame(ts){
+    try{draw(ts)}catch(e){if(!errShown){errShown=true;var m=document.getElementById('mood');if(m)m.textContent='orb error: '+(e&&e.message||e)}}
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+// ---- Phase 1 shell: moods, mic toggle, history swipe, keyboard fit (preview only, no real voice) ----
+(function(){
+  var MOODS=['Idle','Listening','Thinking','Speaking'],mi=0,moodEl=document.getElementById('mood');
+  var mic=document.getElementById('mic'),txt=document.getElementById('txt'),root=document.documentElement;
+  function setMood(i){
+    mi=i%4;moodEl.textContent=MOODS[mi];
+    mic.setAttribute('aria-pressed',mi===1?'true':'false');
+    if(mi===0)orb.setLevel(0.1);
+  }
+  (function tick(ts){
+    var t=ts/1000;
+    if(mi===1)orb.setLevel(0.6+0.2*Math.sin(t*3.2));
+    else if(mi===2)orb.setLevel(0.22+0.08*Math.sin(t*2.2));
+    else if(mi===3)orb.setLevel(Math.max(0.4,Math.min(0.8,0.6+0.2*Math.sin(t*5.8)*Math.cos(t*2.3))));
+    requestAnimationFrame(tick);
+  })(0);
+  document.getElementById('orb').addEventListener('click',function(){setMood(mi+1)}); // preview: tap cycles moods
+  setMood(0);window.uMood=setMood;
+
+  // history: swipe up on replies opens; swipe down on sheet (list at top), handle, or scrim closes. Tap does nothing.
+  var sheet=document.getElementById('sheet'),scrim=document.getElementById('scrim'),list=document.getElementById('list');
+  function hist(open){
+    sheet.classList.toggle('open',open);scrim.classList.toggle('open',open);
+    sheet.setAttribute('aria-hidden',open?'false':'true');
+  }
+  function swipe(el,dir,ok){
+    var x=0,y=0,on=false;
+    el.addEventListener('touchstart',function(e){if(e.touches.length===1){x=e.touches[0].clientX;y=e.touches[0].clientY;on=true}else on=false},{passive:true});
+    el.addEventListener('touchend',function(e){
+      if(!on)return;on=false;var c=e.changedTouches[0],dy=c.clientY-y,dx=c.clientX-x;
+      if(Math.abs(dy)>55&&Math.abs(dy)>Math.abs(dx)*1.5&&(dir==='up'?dy<0:dy>0)&&(!ok||ok()))hist(dir==='up');
+    },{passive:true});
+  }
+  swipe(document.getElementById('reply'),'up');
+  swipe(sheet,'down',function(){return list.scrollTop<=0});
+  scrim.addEventListener('click',function(){hist(false)});
+  document.getElementById('handle').addEventListener('click',function(){hist(false)});
+
+  // keyboard: size the app to the visible area; shrink orb only if keyboard really took space
+  var vv=window.visualViewport,base=vv?vv.height:innerHeight;
+  function fit(){
+    var h=vv?vv.height:innerHeight,focused=document.activeElement===txt;
+    if(!focused||h>base)base=h;
+    root.style.setProperty('--appH',h+'px');
+    document.body.classList.toggle('kb',focused&&base-h>120);
+    if(vv&&vv.offsetTop)window.scrollTo(0,0);
+  }
+  if(vv){vv.addEventListener('resize',fit);vv.addEventListener('scroll',fit)}
+  window.addEventListener('orientationchange',function(){setTimeout(function(){base=vv?vv.height:innerHeight;fit()},300)});
+  txt.addEventListener('focus',function(){setTimeout(fit,80);setTimeout(fit,350)});
+  txt.addEventListener('blur',function(){setTimeout(fit,80)});
+  fit();
+})();
+
+// ---- Auto device detection: size + touch/mouse, re-checked live. No manual switch. ----
+(function(){
+  var root=document.documentElement,sheet=document.getElementById('sheet'),mq=matchMedia('(pointer:coarse)');
+  function detect(){
+    var w=innerWidth,h=innerHeight,coarse=mq.matches,d;
+    if(coarse)d=Math.min(w,h)>=600?'tablet':'phone';
+    else d=w>=1024?'desktop':w>=600?'tablet':'phone';
+    var layout=(d!=='phone'&&w>=900)?'panel':d;
+    root.setAttribute('data-device',d);root.setAttribute('data-layout',layout);
+    if(layout==='panel'){sheet.classList.remove('open');document.getElementById('scrim').classList.remove('open');sheet.setAttribute('aria-hidden','false')}
+    else if(!sheet.classList.contains('open'))sheet.setAttribute('aria-hidden','true');
+  }
+  detect();addEventListener('resize',detect);addEventListener('orientationchange',function(){setTimeout(detect,200)});
+  if(mq.addEventListener)mq.addEventListener('change',detect);
+  // ---- input: mic <-> send, live transcribing, auto-send, menu ----
+  var t=document.getElementById('txt'),l=document.getElementById('list'),dock=document.querySelector('.dock'),mic=document.getElementById('mic');
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition,rec=null,listening=false,silence=null,PH='Type a message';
+  function ui(){dock.classList.toggle('typing',!listening&&t.value.trim().length>0);
+    mic.setAttribute('aria-label',listening?'Stop listening':(t.value.trim()?'Send':'Microphone'))}
+  function send(){
+    var v=t.value.trim();if(!v)return;
+    var p=document.createElement('p');p.innerHTML='<small>now</small>';p.appendChild(document.createTextNode(v));
+    l.appendChild(p);l.scrollTop=l.scrollHeight;t.value='';ui();
+    uMood(2);setTimeout(function(){uMood(3)},1200);setTimeout(function(){uMood(0)},3200); // preview: real reply comes with the Worker
+  }
+  function stopVoice(cancel){
+    clearTimeout(silence);listening=false;mic.setAttribute('aria-pressed','false');
+    if(rec){try{cancel?rec.abort():rec.stop()}catch(e){}}
+    if(cancel)t.value='';
+    uMood(0);ui();
+  }
+  function note(m){t.placeholder=m;setTimeout(function(){t.placeholder=PH},4000)}
+  function startVoice(){
+    if(!SR){note('Voice not supported here');return}
+    try{
+      rec=new SR();rec.lang=navigator.language||'en-US';rec.interimResults=true;rec.continuous=true;
+      rec.onresult=function(e){
+        var s='';for(var i=0;i<e.results.length;i++)s+=e.results[i][0].transcript;
+        t.value=s;clearTimeout(silence);
+        silence=setTimeout(function(){stopVoice(false);send()},2000); // ~2s of silence sends
+      };
+      rec.onerror=function(e){
+        var m=(e.error==='not-allowed'||e.error==='service-not-allowed')?'Mic is blocked here'
+          :e.error==='no-speech'?'Did not hear you':e.error==='network'?'Voice needs internet':'Voice error: '+String(e.error).slice(0,12);
+        stopVoice(false);note(m);
+      };
+      rec.onend=function(){if(listening){stopVoice(false)}};
+      listening=true;mic.setAttribute('aria-pressed','true');uMood(1);ui();
+      silence=setTimeout(function(){if(!t.value)stopVoice(true)},7000); // nothing said for 7s: stop
+      rec.start();
+    }catch(e){stopVoice(true);note('Could not start mic')}
+  }
+  mic.addEventListener('click',function(){
+    if(listening)stopVoice(true);                    // tap again cancels
+    else if(t.value.trim())send();                   // typing: button is send
+    else startVoice();
+  });
+  t.addEventListener('input',ui);
+  t.addEventListener('keydown',function(e){if(e.key==='Enter'&&!listening){e.preventDefault();send()}});
+  ui();
+
+  var md=document.getElementById('mdraw'),ms=document.getElementById('mscrim');
+  function menu(o){md.classList.toggle('open',o);ms.classList.toggle('open',o);md.setAttribute('aria-hidden',o?'false':'true')}
+  document.querySelector('.menu').addEventListener('click',function(){menu(true)});
+  ms.addEventListener('click',function(){menu(false)});
+  document.getElementById('newchat').addEventListener('click',function(){menu(false)});
+  addEventListener('keydown',function(e){if(e.key==='Escape')menu(false)});
+  var sx=0;md.addEventListener('touchstart',function(e){sx=e.touches[0].clientX},{passive:true});
+  md.addEventListener('touchend',function(e){if(sx-e.changedTouches[0].clientX>60)menu(false)},{passive:true});
+})();
+</script>
+</body>
+</html>

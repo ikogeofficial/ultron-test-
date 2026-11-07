@@ -1,5 +1,6 @@
-const CACHE = 'ikoge-focus-v2';
-const ASSETS = ['./', 'index.html', 'style.css', 'app.js', 'manifest.json', 'icon.svg'];
+const CACHE = 'ultron-v3';
+const ASSETS = ['./', 'index.html', 'style.css', 'app.js', 'data.js', 'ultron.html', 'manifest.json', 'icon.svg',
+  'fonts/space-grotesk-latin-wght-normal.woff2', 'fonts/inter-latin-wght-normal.woff2'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
