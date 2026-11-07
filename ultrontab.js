@@ -90,7 +90,7 @@ function answer(q) {
     const n = jambDays();
     return n > 0 ? { a: n + ' days to the proposed UTME start on 15 March 2027. The date is a proposal, so confirm it on jamb.gov.ng.' } : { a: 'The proposed UTME window has started or passed. Check the JAMB timetable.' };
   }
-  if (/\b(tasks?|routine|to ?do|left today|how am i doing|my progress)\b/.test(l)) {
+  if (/\b(my tasks?|tasks? (left|today|done)|my routine|left today|how am i doing|my progress)\b/.test(l)) {
     const d = doneToday(), left = Object.keys(NAMES).filter(k => d.indexOf(k) < 0).map(k => NAMES[k]);
     return { a: left.length ? d.length + ' of 5 core tasks done today. Left: ' + left.join(', ') + '.' : 'All five core tasks are done today. Well finished.' };
   }
