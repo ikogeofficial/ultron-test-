@@ -16,18 +16,26 @@ const dowMon = () => (new Date().getDay() + 6) % 7; // 0 = Monday ... 6 = Sunday
 /* ---------- state ---------- */
 const LABELS = { focus: 'Focus', short: 'Short Break', long: 'Long Break' };
 const DEF = {
-  focus: 25, short: 5, long: 15, every: 4, goal: 120, auto: false, awake: false,
-  subjects: ['English', 'Subject 2', 'Subject 3', 'Subject 4'],
+  focus: 25, short: 5, long: 15, every: 4, goal: 120, auto: false, awake: true,
+  subjects: ['Biology', 'Chemistry', 'Physics', 'English'],
   aStart: '09:00', aLen: 120, bStart: '16:30', bLen: 120, cap: 90
 };
+/* one source for the exam date: the Ultron notes (ultron-kb.js) when loaded, this fallback otherwise */
+const EXAM_DEF = { start: '2027-03-15', label: '15 Mar 2027 (proposed)' };
+function examCfg() {
+  const f = window.ULTRON_KB && window.ULTRON_KB.facts;
+  return f && f.jambStart ? { start: f.jambStart, label: f.jambLabel || EXAM_DEF.label } : EXAM_DEF;
+}
 let settings = Object.assign({}, DEF, store.get('if_settings', {}));
 if (!Array.isArray(settings.subjects) || settings.subjects.length !== 4) settings.subjects = DEF.subjects.slice();
+const OLD_SUBJ = ['English', 'Subject 2', 'Subject 3', 'Subject 4'];
+if (settings.subjects.every((s, i) => s === OLD_SUBJ[i])) settings.subjects = DEF.subjects.slice();
 let mode = 'focus';
 let totalSec = settings.focus * 60;
 let remaining = totalSec;
-let running = false, endAt = 0, timer = null, wakeLock = null;
+let running = false, endAt = 0, timer = null, wakeLock = null, lateNote = '';
 let cycle = store.get('if_cycle', 0);
-let task = null; // { kind: 'read' | 'cod', key, label }
+let task = null; // { kind: 'read' | 'cod', key, label, subject }
 
 /* ---------- tabs ---------- */
 let tab = store.get('if_tab', 'focus');
@@ -73,7 +81,8 @@ function render() {
   $('#time').textContent = fmt(remaining);
   $('#modeLabel').textContent = LABELS[mode].toUpperCase();
   let sub;
-  if (mode !== 'focus') sub = 'Rest your eyes';
+  if (lateNote && !running) sub = lateNote;
+  else if (mode !== 'focus') sub = 'Rest your eyes';
   else if (task) sub = task.label;
   else sub = 'Session ' + ((cycle % settings.every) + 1) + ' of ' + settings.every;
   $('#cycleTxt').textContent = sub;
@@ -124,7 +133,7 @@ function tick() {
 }
 function start() {
   if (remaining <= 0) remaining = totalSec;
-  ctx();
+  ctx(); lateNote = '';
   try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch (e) {}
   running = true; endAt = Date.now() + remaining * 1000;
   clearInterval(timer); timer = setInterval(tick, 250);
@@ -132,8 +141,8 @@ function start() {
 }
 function stop() { running = false; clearInterval(timer); unlock(); }
 function pause() { if (!running) return; tick(); if (!running) return; stop(); render(); }
-function reset() { stop(); remaining = totalSec; render(); }
-function setMode(m) { stop(); task = null; mode = m; totalSec = settings[m] * 60; remaining = totalSec; render(); }
+function reset() { stop(); lateNote = ''; remaining = totalSec; render(); }
+function setMode(m) { stop(); task = null; lateNote = ''; mode = m; totalSec = settings[m] * 60; remaining = totalSec; render(); }
 
 function startTask(t, minutes) {
   stop(); task = t; mode = 'focus';
@@ -147,10 +156,25 @@ function markDone(storeKey, key) {
   store.set(storeKey, o);
 }
 
+/* a finished reading pomodoro becomes a reading session, and 2 hours of reading ticks the Today task */
+function logRead(subject, mins) {
+  const sess = store.get('ul_sess', []), dk = todayKey();
+  sess.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), d: dk, m: mins, p: 0, s: subject });
+  store.set('ul_sess', sess.slice(-600));
+  const total = sess.reduce((a, x) => a + (x.d === dk && x.s ? x.m : 0), 0);
+  if (total >= 120) {
+    const r = store.get('ul_routine', {});
+    r[dk] = r[dk] || {};
+    if (!r[dk].t3) { r[dk].t3 = true; store.set('ul_routine', r); }
+  }
+}
+
 function finish() {
+  const late = Math.round((Date.now() - endAt) / 60000);
   stop();
   chime();
   try { if (navigator.vibrate) navigator.vibrate([250, 120, 250]); } catch (e) {}
+  lateNote = late >= 1 ? 'Finished ' + late + ' min ago' : '';
   if (mode === 'focus') {
     const mins = Math.max(1, Math.round(totalSec / 60));
     if (task && task.kind === 'cod') {
@@ -159,7 +183,12 @@ function finish() {
       notify('Training block done', task.label + ' complete.');
     } else {
       record(mins);
-      if (task && task.kind === 'read') markDone('if_done', task.key);
+      if (task && task.kind === 'read') {
+        const cn = store.get('if_count', {}), dk = todayKey();
+        cn[dk] = cn[dk] || {}; cn[dk][task.key] = (cn[dk][task.key] || 0) + 1; store.set('if_count', cn);
+        if (cn[dk][task.key] >= blockPomos(task.key)) markDone('if_done', task.key);
+        logRead(task.subject || task.label, mins);
+      }
       cycle++; store.set('if_cycle', cycle);
       mode = (cycle % settings.every === 0) ? 'long' : 'short';
       notify('Focus session done', 'Take a break. You earned it.');
@@ -179,7 +208,7 @@ $('#resetBtn').addEventListener('click', reset);
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('.tab'); if (b) setMode(b.dataset.m); });
 $('#chips').addEventListener('click', e => {
   const b = e.target.closest('.chip'); if (!b || !b.dataset.min) return;
-  stop(); task = null; totalSec = Number(b.dataset.min) * 60; remaining = totalSec; render();
+  stop(); task = null; lateNote = ''; totalSec = Number(b.dataset.min) * 60; remaining = totalSec; render();
 });
 $('#fsBtn').addEventListener('click', () => {
   try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (e) {}
@@ -208,6 +237,7 @@ function renderStreak() {
   const todayMin = (log[dkey(now)] && log[dkey(now)].min) || 0;
   const pct = Math.min(100, Math.round(todayMin / settings.goal * 100));
   $('#streakNum').textContent = calcStreak(log);
+  const sl = $('.streak-t .lbl'); if (sl) sl.textContent = 'FOCUS STREAK';
   const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], ti = dowMon();
   let h = '';
   for (let i = 0; i < 7; i++) {
@@ -237,13 +267,17 @@ function blockRange(blk) {
   const s = toMin(blk === 'A' ? settings.aStart : settings.bStart), l = blk === 'A' ? settings.aLen : settings.bLen;
   return [s, s + l];
 }
+function blockPomos(blk) {
+  const r = blockRange(blk);
+  return Math.max(1, Math.floor((r[1] - r[0]) / (settings.focus + settings.short)));
+}
 function subjectFor(dow, blk) {
   if (dow === 6) return blk === 'A' ? 'Weak topics review' : 'Past questions (Test Driller)';
   const i = blk === 'A' ? dow % 4 : (dow + 2) % 4;
   return settings.subjects[i];
 }
 function renderRead() {
-  const dow = dowMon(), done = (store.get('if_done', {})[todayKey()]) || {};
+  const dow = dowMon(), done = (store.get('if_done', {})[todayKey()]) || {}, counts = (store.get('if_count', {})[todayKey()]) || {};
   const cyc = settings.focus + settings.short;
   $('#todayName').textContent = DAYS_LONG[dow] + '. Each block is a pomodoro run (' + settings.focus + ' min on, ' + settings.short + ' off).';
   $('#readToday').innerHTML = ['A', 'B'].map(blk => {
@@ -253,7 +287,7 @@ function renderRead() {
       '<button class="chk" data-chk="' + blk + '" aria-label="Mark done">' + CHECK + '</button>' +
       '<div class="blk-t"><div class="blk-time">' + t12(s) + ' - ' + t12(e) + '</div>' +
       '<div class="blk-sub">' + esc(sub) + '</div>' +
-      '<div class="blk-s">' + (blk === 'A' ? 'Morning' : 'Evening') + ' block, about ' + n + ' pomodoros</div></div>' +
+      '<div class="blk-s">' + (blk === 'A' ? 'Morning' : 'Evening') + ' block, ' + Math.min(counts[blk] || 0, n) + '/' + n + ' pomodoros</div></div>' +
       '<button class="btn primary sm" data-start="' + blk + '">Start</button></div>';
   }).join('');
   const [as, ae] = blockRange('A'), [bs, be] = blockRange('B');
@@ -264,8 +298,9 @@ function renderRead() {
     g += '<div class="wd' + t + '">' + DAYS[i] + '</div><div class="' + t.trim() + '">' + esc(subjectFor(i, 'A')) + '</div><div class="' + t.trim() + '">' + esc(subjectFor(i, 'B')) + '</div>';
   }
   $('#readWeek').innerHTML = g;
-  const exam = new Date(2027, 3, 16), now = new Date(); now.setHours(0, 0, 0, 0);
+  const ex = examCfg(), p = ex.start.split('-').map(Number), exam = new Date(p[0], p[1] - 1, p[2]), now = new Date(); now.setHours(0, 0, 0, 0);
   $('#jambDays').textContent = Math.max(0, Math.round((exam - now) / 86400000));
+  const pill = $('#jambDate'); if (pill) pill.textContent = ex.label;
 }
 $('#readToday').addEventListener('click', e => {
   const c = e.target.closest('[data-chk]'), s = e.target.closest('[data-start]');
@@ -273,8 +308,8 @@ $('#readToday').addEventListener('click', e => {
     const o = store.get('if_done', {}), d = todayKey(); o[d] = o[d] || {};
     o[d][c.dataset.chk] = !o[d][c.dataset.chk]; store.set('if_done', o); renderRead();
   } else if (s) {
-    const blk = s.dataset.start;
-    startTask({ kind: 'read', key: blk, label: 'Reading: ' + subjectFor(dowMon(), blk) }, settings.focus);
+    const blk = s.dataset.start, sub = subjectFor(dowMon(), blk);
+    startTask({ kind: 'read', key: blk, label: 'Reading: ' + sub, subject: sub }, settings.focus);
   }
 });
 $('#editRead').addEventListener('click', openSettings);
@@ -576,5 +611,6 @@ $('#sSave').addEventListener('click', () => {
 showTab(tab);
 render(); renderStreak(); renderRead(); renderTrain();
 loadVideo();
+window.ulApp = { renderRead };
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 })();

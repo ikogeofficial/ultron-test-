@@ -1,4 +1,4 @@
-const CACHE = 'ikoge-focus-v7';
+const CACHE = 'ikoge-focus-v8';
 const ASSETS = ['./', 'index.html', 'style.css', 'ultron.css', 'app.js', 'ultron.js', 'streaks.js', 'reading.js', 'ultrontab.js', 'ultron-kb.js', 'ultron.html', 'manifest.json', 'icon.svg'];
 
 self.addEventListener('install', e => {
@@ -14,10 +14,9 @@ self.addEventListener('fetch', e => {
   if (url.origin !== location.origin) return; // never touch Spotify / radio streams
   e.respondWith(
     fetch(req).then(res => {
-      const copy = res.clone();
-      caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {}); }
       return res;
-    }).catch(() => caches.match(req).then(r => r || caches.match('index.html')))
+    }).catch(() => caches.match(req).then(r => r || (req.mode === 'navigate' ? caches.match('index.html') : Response.error())))
   );
 });
 self.addEventListener('notificationclick', e => {
