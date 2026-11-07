@@ -13,7 +13,8 @@ const today0 = () => { const n = new Date(); return new Date(n.getFullYear(), n.
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const hm = m => m >= 60 ? Math.floor(m / 60) + 'h ' + (m % 60) + 'm' : m + 'm';
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-const SUBJ = ['Biology', 'Chemistry', 'Physics', 'English'];
+/* subjects come from Settings, so renaming one there reaches this tab */
+const SUBJ = () => { const s = store.get('if_settings', {}).subjects; return Array.isArray(s) && s.length === 4 && s[1] !== 'Subject 2' ? s : ['Biology', 'Chemistry', 'Physics', 'English']; };
 const CATS = ['Fiction', 'Non-fiction', 'Faith', 'Study', 'Other'];
 
 const css = document.createElement('style');
@@ -42,12 +43,16 @@ function modal(title, fields, okLabel, onSave) {
       '<input class="field" id="mf_' + f.id + '" type="' + f.t + '"' + (f.max ? ' max="' + f.max + '"' : '') + (f.t === 'number' ? ' inputmode="numeric" min="0"' : ' maxlength="80"') +
       ' value="' + esc(f.v == null ? '' : f.v) + '">') + '</label>').join('') +
     '<div class="note" id="mf_err" style="color:#ff7a96"></div><div class="btnrow" style="grid-template-columns:1fr 1fr"><button class="btn" id="mf_c">Cancel</button><button class="btn primary" id="mf_s">' + okLabel + '</button></div></div>';
+  ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true');
   document.body.appendChild(ov);
-  $('#mf_c').onclick = () => ov.remove();
+  const onKey = e => { if (e.key === 'Escape') close(); };
+  const close = () => { document.removeEventListener('keydown', onKey); ov.remove(); };
+  document.addEventListener('keydown', onKey);
+  $('#mf_c').onclick = close;
   $('#mf_s').onclick = () => {
     const v = {}; fields.forEach(f => { v[f.id] = $('#mf_' + f.id).value.trim(); });
     const err = onSave(v);
-    if (err) $('#mf_err').textContent = err; else { ov.remove(); render(); }
+    if (err) $('#mf_err').textContent = err; else { close(); render(); }
   };
 }
 const num = (v, lo, hi) => { const n = parseInt(v, 10); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : 0; };
@@ -85,12 +90,12 @@ function render() {
   sess.forEach(s => { tot += s.m; if (s.d === tk) { tm += s.m; tp += s.p; } if (s.d >= wk0 && s.d <= tk) { wm += s.m; wp += s.p; } });
   const gp = Math.min(100, Math.round(wp / wg * 100));
   const active = books.filter(b => !b.done), done = books.filter(b => b.done);
-  const subj = SUBJ.map(n => {
+  const subj = SUBJ().map(n => {
     const ss = sess.filter(s => s.s === n), m = ss.reduce((a, s) => a + s.m, 0), last = ss.length ? ss.map(s => s.d).sort().pop() : null;
     const target = tg[n] || 30, pc = Math.min(100, Math.round(m / (target * 60) * 100));
-    return '<div class="bk"><div class="sec-row"><div class="blk-sub">' + n + '</div><div class="pill">' + pc + '%</div></div><div class="bar"><i style="width:' + pc + '%;background:#a78bfa"></i></div>' +
+    return '<div class="bk"><div class="sec-row"><div class="blk-sub">' + esc(n) + '</div><div class="pill">' + pc + '%</div></div><div class="bar"><i style="width:' + pc + '%;background:#a78bfa"></i></div>' +
       '<div class="blk-s">' + hm(m) + ' of ' + target + 'h target &middot; ' + ss.length + ' sessions' + (last ? ' &middot; last ' + last : '') + '</div>' +
-      '<div class="bk-b"><button class="btn sm" data-ls="' + n + '">Log session</button></div></div>';
+      '<div class="bk-b"><button class="btn sm" data-ls="' + esc(n) + '">Log session</button></div></div>';
   }).join('');
   const bl = active.map(b => {
     const pc = Math.round(b.read / b.total * 100);
@@ -108,6 +113,7 @@ function render() {
       '<div class="goal-row"><div class="note">Weekly goal: ' + wp + '/' + wg + ' pages</div><div class="goal-pct">' + gp + '%</div></div><div class="bar"><i style="width:' + gp + '%"></i></div>' +
       '<button class="btn sm wide" data-act="goal" style="margin-top:12px">Set weekly page goal</button></section>' +
     '<section class="card"><div class="sec-h">JAMB subjects</div><div class="bks">' + subj + '</div>' +
+      '<div class="note" style="margin-top:10px">Finished reading blocks from the Focus timer are logged here automatically.</div>' +
       '<button class="btn sm wide" data-act="targets" style="margin-top:12px">Set target hours</button></section>' +
     '<section class="card"><div class="sec-row"><div class="sec-h">Books</div><button class="btn primary sm" data-act="add">Add book</button></div>' +
       '<div class="bks">' + (bl || '<div class="note">No books yet. Tap Add book to start your shelf.</div>') + '</div></section>' +
@@ -119,8 +125,8 @@ box.addEventListener('click', e => {
   const D = t.dataset, bk = id => books.find(b => b.id === id);
   if (D.act === 'add') addBook();
   else if (D.act === 'goal') modal('Weekly page goal', [{ id: 'g', l: 'Pages per week', t: 'number', v: wg }], 'Save', v => { const n = num(v.g, 0, 5000); if (n < 1) return 'Enter a number above 0.'; store.set('ul_weekgoal', n); });
-  else if (D.act === 'targets') modal('Target hours per subject', SUBJ.map(n => ({ id: n, l: n, t: 'number', v: tg[n] || 30 })), 'Save', v => {
-    const o = {}; SUBJ.forEach(n => { const h = num(v[n], 0, 1000); o[n] = h < 1 ? 30 : h; }); store.set('ul_subtarget', o);
+  else if (D.act === 'targets') modal('Target hours per subject', SUBJ().map(n => ({ id: n, l: n, t: 'number', v: tg[n] || 30 })), 'Save', v => {
+    const o = {}; SUBJ().forEach(n => { const h = num(v[n], 0, 1000); o[n] = h < 1 ? 30 : h; }); store.set('ul_subtarget', o);
   });
   else if (D.ls) logSession(null, D.ls);
   else if (D.lb && bk(D.lb)) logSession(bk(D.lb), null);

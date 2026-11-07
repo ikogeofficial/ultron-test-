@@ -1,23 +1,11 @@
 (() => {
 'use strict';
-/* one-time: replace the placeholder subject names with the JAMB subjects */
-try {
-  const raw = localStorage.getItem('if_settings'), s = raw ? JSON.parse(raw) : {}, sub = s.subjects;
-  const dflt = !Array.isArray(sub) || (sub[1] === 'Subject 2' && sub[2] === 'Subject 3' && sub[3] === 'Subject 4');
-  if (dflt && localStorage.getItem('ul_subjfix') !== '1') {
-    s.subjects = ['Biology', 'Chemistry', 'Physics', 'English'];
-    localStorage.setItem('if_settings', JSON.stringify(s));
-    localStorage.setItem('ul_subjfix', '1');
-    location.reload();
-    return;
-  }
-} catch (e) {}
-
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const pad = n => String(n).padStart(2, '0');
 const keyOf = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 const jget = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+const jset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
 
 const css = document.createElement('style');
 css.textContent = '.ufrm{display:block;width:100%;height:calc(100dvh - 250px);min-height:380px;border:0;background:#000}.nav-btn span{font-size:10px}';
@@ -102,7 +90,7 @@ function answer(q) {
     if (r.second && r.ss >= 3 && r.ss >= r.bs * 0.7) a += ' Related: ' + r.second.t + '.';
     return { a, s: r.best.s };
   }
-  return { a: 'That is not in my offline notes yet. Ask Claude to add it, then say update ultron.' };
+  return { a: 'That is not in my offline notes yet. Ask Claude to add it, then say update ultron.', miss: true };
 }
 const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch (e) { return u; } };
 function say(d, text, src) {
@@ -119,6 +107,12 @@ function say(d, text, src) {
   if (src) { const s2 = d.createElement('small'); s2.style.marginTop = '4px'; s2.textContent = 'Source: ' + host(src); p.appendChild(s2); }
   l.appendChild(p); l.scrollTop = l.scrollHeight;
 }
+/* questions the notes could not answer are kept so Claude can add them on the next "update ultron" */
+function logMiss(q) {
+  const m = jget('ul_unanswered', []);
+  m.push({ d: keyOf(new Date()), q: q.slice(0, 120) });
+  jset('ul_unanswered', m.slice(-50));
+}
 function hook() {
   let d; try { d = frame.contentDocument; } catch (e) { return; }
   const list = d && d.getElementById('list'); if (!list) return;
@@ -127,24 +121,21 @@ function hook() {
     const q = Array.from(n.childNodes).filter(x => x.nodeType === 3).map(x => x.textContent).join('').trim();
     if (!q) return;
     const r = answer(q);
+    if (r.miss) logMiss(q);
     setTimeout(() => say(d, r.a, r.s), 1250);
   }))).observe(list, { childList: true });
 }
 frame.addEventListener('load', () => { if (frame.dataset.on) hook(); });
 
-/* ---------- load the notes, keep the JAMB countdown in sync ---------- */
-function applyJamb() {
-  const kb = KB(), el = $('#jambDays'), pill = $('#jambDate'), note = $('#ukb');
-  if (!kb || !el) return;
-  const n = jambDays();
-  if (el.textContent !== String(Math.max(0, n))) el.textContent = Math.max(0, n);
-  if (pill && pill.textContent !== kb.facts.jambLabel) pill.textContent = kb.facts.jambLabel;
+/* ---------- load the notes; app.js reads the exam date from them ---------- */
+function onNotes() {
+  const kb = KB(), note = $('#ukb');
+  if (!kb) return;
+  if (window.ulApp) window.ulApp.renderRead();
   if (note) note.textContent = 'Type a question. I answer from ' + kb.entries.length + ' offline notes, no internet needed. Notes updated ' +
     new Date(kb.updated + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) + '.';
 }
 const sc = document.createElement('script');
-sc.src = 'ultron-kb.js'; sc.onload = applyJamb;
+sc.src = 'ultron-kb.js'; sc.onload = onNotes;
 document.body.appendChild(sc);
-const jd = $('#jambDays');
-if (jd) new MutationObserver(applyJamb).observe(jd, { childList: true, characterData: true, subtree: true });
 })();
