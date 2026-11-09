@@ -1,4 +1,4 @@
-const CACHE = 'ikoge-focus-v12';
+const CACHE = 'ikoge-focus-v13';
 const ASSETS = ['./', 'index.html', 'style.css', 'ultron.css', 'app.js', 'ultron.js', 'streaks.js', 'reading.js', 'reminders.js', 'ultrontab.js', 'ultron-kb.js', 'ultron.html', 'manifest.json', 'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-512-maskable.png', 'icon-180.png'];
 
 self.addEventListener('install', e => {
@@ -21,5 +21,9 @@ self.addEventListener('fetch', e => {
 });
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  e.waitUntil(self.clients.matchAll({ type: 'window' }).then(cs => cs.length ? cs[0].focus() : self.clients.openWindow('./')));
+  const tab = (e.notification.data && e.notification.data.tab) || '';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => {
+    if (cs.length) { if (tab) cs[0].postMessage({ type: 'ikoge-tab', tab }); return cs[0].focus(); }
+    return self.clients.openWindow('./' + (tab ? '?tab=' + tab : ''));
+  }));
 });

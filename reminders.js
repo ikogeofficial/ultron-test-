@@ -21,6 +21,7 @@ const DEFS = [
 const READ_DEF = { aStart: '09:00', bStart: '16:30' };
 const TIME_RE = /^([01]?\d|2[0-3]):[0-5]\d$/;
 const pad2 = n => String(n).padStart(2, '0');
+const dkey = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
 const normTime = (v, d) => { if (!TIME_RE.test(v || '')) return d; const p = v.split(':'); return pad2(p[0]) + ':' + p[1]; };
 
 function readTime(def) {
@@ -67,12 +68,17 @@ function paintPerm() {
 }
 function save() {
   const list = $('#rList'); if (!list) return;
-  const items = {};
+  const prev = getCfg(), items = {};
   DEFS.forEach(d => {
     const on = $('[data-r="' + d.id + '"]', list), tm = $('[data-rt="' + d.id + '"]', list);
     items[d.id] = { on: on ? on.checked : true, time: d.from ? readTime(d) : normTime(tm && tm.value, d.time) };
   });
   store.set('if_rem', { on: $('#rOn').checked, items });
+  /* a reminder you switched on or moved is allowed to fire again today */
+  const k = dkey(new Date()), all = store.get('if_remfired', {}), fired = all[k] || {};
+  DEFS.forEach(d => { if (prev.items[d.id].on !== items[d.id].on || prev.items[d.id].time !== items[d.id].time) delete fired[d.id]; });
+  const keep = {}; keep[k] = fired; store.set('if_remfired', keep);
+  tick();
 }
 function bind() {
   const btn = $('#rPerm'); if (!btn) return;
@@ -85,5 +91,58 @@ function bind() {
 }
 bind();
 
-window.ulRem = { paint, save, getCfg, DEFS };
+/* ---------- the engine ---------- */
+const WINDOW_MIN = 90; // a reminder later than this after its time is skipped, not fired
+const toMin = s => { const p = (s || '').split(':'); return Number(p[0]) * 60 + Number(p[1]); };
+const DONE_KEY = { pray: 't1', store: 't2', pauline: 't5', evening: 't4', body: 'bx' };
+
+/* pure: which reminders fire now, and which are silently skipped (already done, or too late) */
+function due(cfg, nowMin, fired, isDone) {
+  const fire = [], skip = [];
+  DEFS.forEach(d => {
+    const it = cfg.items[d.id];
+    if (!it.on || fired[d.id]) return;
+    const t = toMin(it.time);
+    if (nowMin < t) return;
+    if (nowMin - t > WINDOW_MIN || isDone(d.id)) skip.push(d.id); else fire.push(d.id);
+  });
+  return { fire, skip };
+}
+function isDoneToday(id) {
+  const k = dkey(new Date());
+  if (id === 'readA' || id === 'readB') return !!((store.get('if_done', {})[k] || {})[id === 'readA' ? 'A' : 'B']);
+  const key = DONE_KEY[id];
+  return key ? !!((store.get('ul_routine', {})[k] || {})[key]) : false;
+}
+function show(d) {
+  if (permState() !== 'granted') return;
+  const opts = { body: d.body, icon: 'icon-192.png', tag: 'ikoge-rem-' + d.id, vibrate: [200, 100, 200], data: { tab: d.tab } };
+  try {
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.ready.then(r => r.showNotification(d.label, opts));
+    else new Notification(d.label, opts);
+  } catch (e) {}
+}
+function tick(now) {
+  now = now || new Date();
+  const cfg = getCfg(); if (!cfg.on || permState() !== 'granted') return;
+  const k = dkey(now), all = store.get('if_remfired', {}), fired = all[k] || {};
+  const r = due(cfg, now.getHours() * 60 + now.getMinutes(), fired, isDoneToday);
+  if (!r.fire.length && !r.skip.length) return;
+  r.skip.concat(r.fire).forEach(id => { fired[id] = true; }); // mark first so nothing can repeat
+  const keep = {}; keep[k] = fired; store.set('if_remfired', keep);
+  r.fire.forEach(id => show(DEFS.find(d => d.id === id)));
+}
+
+/* tapping a notification opens the matching tab */
+const TABS = ['today', 'focus', 'read', 'train'];
+function goTab(t) { if (TABS.indexOf(t) < 0) return; const b = $('.nav-btn[data-t="' + t + '"]'); if (b) b.click(); }
+if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data && e.data.type === 'ikoge-tab') goTab(e.data.tab); });
+const openTab = new URLSearchParams(location.search).get('tab');
+if (openTab) setTimeout(() => goTab(openTab), 700);
+
+setInterval(tick, 20000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') tick(); });
+setTimeout(tick, 1500);
+
+window.ulRem = { paint, save, getCfg, DEFS, due, tick };
 })();
