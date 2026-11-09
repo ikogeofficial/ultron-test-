@@ -272,6 +272,13 @@
     <input id="bgFile" type="file" accept="video/*" hidden>
     <div class="note" id="bgMsg">Pick a short clip (under 60 MB). It is copied into the app and plays silently on a loop.</div>
 
+    <div class="sec-h sm">Reminders</div>
+    <label class="check"><input id="rOn" type="checkbox"> Remind me during the day</label>
+    <div class="note" id="rStat"></div>
+    <button type="button" class="btn sm" id="rPerm" hidden>Allow notifications</button>
+    <div id="rList"></div>
+    <div class="note">Reminders sound while the app is open or just in the background. A task you already finished is skipped.</div>
+
     <div class="dlg-btns">
       <button type="button" class="btn" id="sCancel">Cancel</button>
       <button type="button" class="btn primary" id="sSave">Save</button>
@@ -281,5 +288,6 @@
 
 <script src="app.js"></script>
 <script src="ultron.js"></script>
+<script src="reminders.js"></script>
 </body>
 </html>

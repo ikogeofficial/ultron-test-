@@ -638,6 +638,7 @@ function openSettings() {
   $('#sBStart').value = settings.bStart; $('#sBLen').value = settings.bLen;
   $('#sCap').value = settings.cap;
   applyBg();
+  if (window.ulRem) window.ulRem.paint();
   try { dlg.showModal(); } catch (e) {}
 }
 $('#setBtn').addEventListener('click', openSettings);
@@ -655,6 +656,7 @@ $('#sSave').addEventListener('click', () => {
     cap: clamp($('#sCap').value, 15, 300, DEF.cap)
   };
   store.set('if_settings', settings);
+  if (window.ulRem) window.ulRem.save();
   if (!running && !task) { totalSec = settings[mode] * 60; remaining = totalSec; }
   dlg.close(); render(); renderStreak(); renderRead(); renderTrain();
 });
