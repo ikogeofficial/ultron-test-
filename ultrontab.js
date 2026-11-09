@@ -75,8 +75,9 @@ function answer(q) {
   if (/\b(what('?s| is)? the time|time is it|current time)\b/.test(l)) return { a: 'It is ' + new Date().toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) + '.' };
   if (/\b(today'?s date|what('?s| is)? the date|what day|day is it|date today)\b/.test(l)) return { a: 'Today is ' + new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + '.' };
   if (/\b(how many days|days left|days to go|countdown|how long (until|till|to))\b/.test(l) && /(jamb|utme|exam)/.test(l)) {
-    const n = jambDays();
-    return n > 0 ? { a: n + ' days to the proposed UTME start on 15 March 2027. The date is a proposal, so confirm it on jamb.gov.ng.' } : { a: 'The proposed UTME window has started or passed. Check the JAMB timetable.' };
+    const n = jambDays(), sp = kb.facts.jambStart.split('-').map(Number);
+    const label = new Date(sp[0], sp[1] - 1, sp[2]).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+    return n > 0 ? { a: n + ' days to the proposed UTME start on ' + label + '. The date is a proposal, so confirm it on jamb.gov.ng.' } : { a: 'The proposed UTME window has started or passed. Check the JAMB timetable.' };
   }
   if (/\b(my tasks?|tasks? (left|today|done)|my routine|left today|how am i doing|my progress)\b/.test(l)) {
     const d = doneToday(), left = Object.keys(NAMES).filter(k => d.indexOf(k) < 0).map(k => NAMES[k]);
@@ -112,7 +113,36 @@ function logMiss(q) {
   const m = jget('ul_unanswered', []);
   m.push({ d: keyOf(new Date()), q: q.slice(0, 120) });
   jset('ul_unanswered', m.slice(-50));
+  paintUn();
 }
+/* copy / clear the saved unanswered questions so they can be pasted to Claude for "update ultron" */
+const unBox = document.createElement('div');
+unBox.className = 'btnrow'; unBox.style.cssText = 'grid-template-columns:1fr 1fr;margin-top:10px';
+unBox.innerHTML = '<button class="btn sm" id="ulCopy"></button><button class="btn sm" id="ulClear">Clear</button>';
+pane.appendChild(unBox);
+const unCopy = $('#ulCopy', unBox), unClear = $('#ulClear', unBox);
+let unTimer = 0;
+function paintUn(msg) {
+  const n = jget('ul_unanswered', []).length;
+  unCopy.textContent = msg || (n ? 'Copy unanswered (' + n + ')' : 'No unanswered');
+  unCopy.disabled = unClear.disabled = !n;
+  if (msg) { clearTimeout(unTimer); unTimer = setTimeout(() => paintUn(), 2000); }
+}
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); return true; } catch (e) {}
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = t; ta.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(ta);
+    ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok;
+  } catch (e) { return false; }
+}
+unCopy.addEventListener('click', async () => {
+  const m = jget('ul_unanswered', []); if (!m.length) return;
+  const ok = await copyText('Ultron unanswered questions:\n' + m.map(x => '- ' + x.d + ': ' + x.q).join('\n'));
+  paintUn(ok ? 'Copied' : 'Copy failed');
+});
+unClear.addEventListener('click', () => { if (confirm('Clear all saved unanswered questions?')) { jset('ul_unanswered', []); paintUn(); } });
+paintUn();
 function hook() {
   let d; try { d = frame.contentDocument; } catch (e) { return; }
   const list = d && d.getElementById('list'); if (!list) return;

@@ -72,6 +72,7 @@ function logSession(book, subj) {
       if (p > 0) { book.read = Math.min(book.total, book.read + p); if (book.read >= book.total) { book.done = true; book.doneDate = d; } }
     } else s.s = subj;
     sess.push(s); save();
+    if (!book && window.ulApp && window.ulApp.tickReadGoal) window.ulApp.tickReadGoal(d);
   });
 }
 function addBook() {

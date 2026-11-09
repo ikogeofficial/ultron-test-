@@ -30,6 +30,12 @@ let settings = Object.assign({}, DEF, store.get('if_settings', {}));
 if (!Array.isArray(settings.subjects) || settings.subjects.length !== 4) settings.subjects = DEF.subjects.slice();
 const OLD_SUBJ = ['English', 'Subject 2', 'Subject 3', 'Subject 4'];
 if (settings.subjects.every((s, i) => s === OLD_SUBJ[i])) settings.subjects = DEF.subjects.slice();
+/* one-time migration: keep-screen-on became the default, but an older saved awake:false would override it */
+if (!store.get('if_awake_v2', false)) {
+  settings.awake = true;
+  store.set('if_settings', settings);
+  store.set('if_awake_v2', true);
+}
 let mode = 'focus';
 let totalSec = settings.focus * 60;
 let remaining = totalSec;
@@ -89,7 +95,7 @@ function render() {
   $('#startBtn').textContent = running ? 'Pause' : (remaining < totalSec && remaining > 0 ? 'Resume' : 'Start');
   $$('#tabs .tab').forEach(b => b.classList.toggle('on', b.dataset.m === mode));
   document.body.dataset.mode = mode;
-  document.title = running ? fmt(remaining) + ' · ' + LABELS[mode] : 'Ikoge Focus';
+  document.title = running ? fmt(remaining) + ' · ' + LABELS[mode] : 'Ikoge Ultron';
 }
 
 /* ---------- sound effects ---------- */
@@ -156,17 +162,22 @@ function markDone(storeKey, key) {
   store.set(storeKey, o);
 }
 
-/* a finished reading pomodoro becomes a reading session, and 2 hours of reading ticks the Today task */
-function logRead(subject, mins) {
-  const sess = store.get('ul_sess', []), dk = todayKey();
-  sess.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), d: dk, m: mins, p: 0, s: subject });
-  store.set('ul_sess', sess.slice(-600));
+/* 2 hours of subject reading on a day ticks the Today task t3. Shared: timer sessions and manual "Log session" both call it. */
+function tickReadGoal(dk) {
+  const sess = store.get('ul_sess', []);
   const total = sess.reduce((a, x) => a + (x.d === dk && x.s ? x.m : 0), 0);
   if (total >= 120) {
     const r = store.get('ul_routine', {});
     r[dk] = r[dk] || {};
     if (!r[dk].t3) { r[dk].t3 = true; store.set('ul_routine', r); }
   }
+}
+/* a finished reading pomodoro becomes a reading session */
+function logRead(subject, mins) {
+  const sess = store.get('ul_sess', []), dk = todayKey();
+  sess.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), d: dk, m: mins, p: 0, s: subject });
+  store.set('ul_sess', sess.slice(-600));
+  tickReadGoal(dk);
 }
 
 function finish() {
@@ -611,6 +622,6 @@ $('#sSave').addEventListener('click', () => {
 showTab(tab);
 render(); renderStreak(); renderRead(); renderTrain();
 loadVideo();
-window.ulApp = { renderRead };
+window.ulApp = { renderRead, tickReadGoal };
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 })();
