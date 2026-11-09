@@ -225,7 +225,7 @@ $('#fsBtn').addEventListener('click', () => {
   try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (e) {}
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') { if (running) { tick(); lock(); } renderStreak(); renderRead(); renderTrain(); }
+  if (document.visibilityState === 'visible') { if (running) { tick(); lock(); } renderStreak(); renderRead(); renderTrain(); renderBody(); }
   bgVisibility();
 });
 
@@ -324,6 +324,47 @@ $('#readToday').addEventListener('click', e => {
   }
 });
 $('#editRead').addEventListener('click', openSettings);
+
+/* ---------- BODY routine: about 10 minutes, same every day, no equipment needed ---------- */
+const BODY = [
+  { k: 'wall', t: 'Wall posture', s: '45 seconds', d: 'Stand with heels, hips, upper back and head touching a wall. Chin level, ribs down. Breathe slowly.' },
+  { k: 'cobra', t: 'Cobra stretch', s: '20 seconds, 2 times', d: 'Lie on your belly, hands under your shoulders. Push your chest up and keep your hips on the floor. Stop if your lower back pinches.' },
+  { k: 'hang', t: 'Hang or reach', s: '20 seconds, 2 times', d: 'Hang from a bar with straight arms. No bar: stand on tiptoes and reach both arms as high as you can.' },
+  { k: 'plank', t: 'Plank', s: '30 seconds, 2 times', d: 'Forearms and toes on the floor, body in one straight line. Squeeze your belly. Rest 20 seconds between.' },
+  { k: 'raise', t: 'Lying leg raise', s: '8 reps, 2 sets', d: 'On your back, legs straight. Lift them up, then lower slowly without touching the floor. Keep your lower back pressed down.' },
+  { k: 'bug', t: 'Dead bug', s: '8 each side, 2 sets', d: 'On your back, arms up, knees bent over your hips. Lower the opposite arm and leg toward the floor, return, then switch.' }
+];
+const bodyFull = o => BODY.every(b => o && o[b.k]);
+function bodyStreak(all) {
+  let n = 0; const d = new Date(); d.setHours(0, 0, 0, 0);
+  if (!bodyFull(all[dkey(d)])) d.setDate(d.getDate() - 1);
+  while (bodyFull(all[dkey(d)]) && n < 4000) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function renderBody() {
+  const el = $('#bodyCard'); if (!el) return;
+  const k = todayKey(), all = store.get('ul_body', {}), o = all[k] || {};
+  const n = BODY.filter(b => o[b.k]).length, st = bodyStreak(all);
+  el.innerHTML = '<div class="sec-row"><div class="sec-h">Body routine</div><div class="pill">' + n + '/' + BODY.length + '</div></div>' +
+    '<div class="note">About 10 minutes. Same every day, no weights. Showing up daily is the goal.</div>' +
+    '<div class="blocks">' + BODY.map(b => '<div class="blk' + (o[b.k] ? ' done' : '') + '" data-body="' + b.k + '">' +
+      '<button class="chk" aria-label="Mark done">' + CHECK + '</button><div class="blk-t"><div class="blk-time">' + esc(b.s) + '</div>' +
+      '<div class="blk-sub">' + esc(b.t) + '</div><div class="blk-s">' + esc(b.d) + '</div></div></div>').join('') + '</div>' +
+    '<div class="note">' + (n === BODY.length ? 'Done for today. ' : '') + 'Body streak: ' + st + (st === 1 ? ' day' : ' days') + '.</div>';
+}
+(function () {
+  const el = $('#bodyCard'); if (!el) return;
+  el.addEventListener('click', e => {
+    const r = e.target.closest('[data-body]'); if (!r) return;
+    const k = todayKey(), all = store.get('ul_body', {});
+    all[k] = all[k] || {}; all[k][r.dataset.body] = !all[k][r.dataset.body];
+    const keep = Object.keys(all).sort().slice(-120), out = {}; keep.forEach(x => { out[x] = all[x]; });
+    store.set('ul_body', out);
+    /* the Today bonus row follows the full routine (it never counts toward the 5-task streak) */
+    const rt = store.get('ul_routine', {}); rt[k] = rt[k] || {}; rt[k].bx = bodyFull(out[k]); store.set('ul_routine', rt);
+    renderBody();
+  });
+})();
 
 /* ---------- TRAIN tab: COD ---------- */
 const CLASS_DAY = [
@@ -620,7 +661,7 @@ $('#sSave').addEventListener('click', () => {
 
 /* ---------- init ---------- */
 showTab(tab);
-render(); renderStreak(); renderRead(); renderTrain();
+render(); renderStreak(); renderRead(); renderTrain(); renderBody();
 loadVideo();
 window.ulApp = { renderRead, tickReadGoal };
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

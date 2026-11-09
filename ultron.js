@@ -18,7 +18,7 @@ const TASKS = [
   ['t1', 'Prayer + the Word'], ['t2', 'Phone to the store'], ['t3', 'JAMB reading, 2 hours'],
   ['t4', 'Evening prayer'], ['t5', 'Pauline chapter']
 ];
-const BONUS = ['bx', 'Exercise, 20 minutes'];
+const BONUS = ['bx', 'Body routine, 10 minutes'];
 const CHECK = '<svg viewBox="0 0 24 24" width="15" height="15"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 let routine = store.get('ul_routine', {});
 const fromKey = k => { const p = k.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
