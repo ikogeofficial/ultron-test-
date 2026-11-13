@@ -19,34 +19,42 @@ jobs:
         continue-on-error: true
         shell: bash
         env:
-          KS: ${{ secrets.KEYSTORE_B64 }}
+          KS_PASS: ${{ secrets.KS_PASS }}
           KS_FILE: ${{ runner.temp }}/ikoge.jks
-          KS_PASS: ikoge-ultron-2026
           VERSION_CODE: ${{ github.run_number }}
         run: |
           set -o pipefail
           {
-            set -ex
-            test -n "$KS" || { echo "SECRET KEYSTORE_B64 IS EMPTY"; exit 1; }
-            echo "$KS" | tr -d ' \r\n' | base64 -d > "$KS_FILE"
-            keytool -list -keystore "$KS_FILE" -storepass "$KS_PASS" | head -5
+            set -e
+            test -n "$KS_PASS" || { echo "SECRET KS_PASS IS EMPTY"; exit 1; }
+            echo "== decode key"
+            base64 -d signing/ikoge.jks.b64 > "$KS_FILE"
+            keytool -list -keystore "$KS_FILE" -storepass "$KS_PASS" | tail -2
+            echo "== npm install"
             npm install --no-audit --no-fund
+            echo "== copy web files"
             mkdir www
-            tar --exclude=./node_modules --exclude=./android --exclude=./www --exclude=./scripts --exclude=./supabase --exclude=./worker --exclude=./.github --exclude=./package.json --exclude=./package-lock.json --exclude=./capacitor.config.json --exclude=./README.md -cf - . | tar -xf - -C www
+            tar --exclude=./node_modules --exclude=./android --exclude=./www --exclude=./scripts --exclude=./signing --exclude=./docs --exclude=./supabase --exclude=./worker --exclude=./.github --exclude=./package.json --exclude=./package-lock.json --exclude=./capacitor.config.json --exclude=./README.md -cf - . | tar -xf - -C www
+            echo "== capacitor"
             npx cap add android
             npx cap sync android
             node scripts/patch-android.js
+            echo "== gradle"
             cd android
             ./gradlew assembleRelease --no-daemon --stacktrace
             cd ..
             find android -name "*.apk"
             cp android/app/build/outputs/apk/release/app-release.apk Ikoge-Ultron.apk
+            echo "== BUILD OK"
           } 2>&1 | tee build.log
       - name: Save build log to the build-logs branch
         if: always()
         shell: bash
+        env:
+          KS_PASS: ${{ secrets.KS_PASS }}
         run: |
           tail -n 300 build.log > "$RUNNER_TEMP/log.txt" || echo "no log" > "$RUNNER_TEMP/log.txt"
+          if [ -n "$KS_PASS" ]; then sed -i "s|$KS_PASS|***|g" "$RUNNER_TEMP/log.txt"; fi
           echo "RESULT: ${{ steps.build.outcome }}" >> "$RUNNER_TEMP/log.txt"
           git config user.name "build-bot"
           git config user.email "build-bot@users.noreply.github.com"
