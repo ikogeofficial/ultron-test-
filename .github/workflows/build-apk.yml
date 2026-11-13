@@ -14,29 +14,51 @@ jobs:
         with: { node-version: 22 }
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 21 }
-      - name: Check signing key
-        env: { KS: "${{ secrets.KEYSTORE_B64 }}" }
-        run: |
-          if [ -z "$KS" ]; then echo "Secret KEYSTORE_B64 is missing. Add it in Settings > Secrets and variables > Actions."; exit 1; fi
-          echo "$KS" | base64 -d > "$RUNNER_TEMP/ikoge.jks"
-      - run: npm install --no-audit --no-fund
-      - name: Copy web files into www
-        run: |
-          mkdir www
-          tar --exclude=./node_modules --exclude=./android --exclude=./www --exclude=./scripts --exclude=./supabase --exclude=./worker --exclude=./.github --exclude=./package.json --exclude=./package-lock.json --exclude=./capacitor.config.json --exclude=./README.md -cf - . | tar -xf - -C www
-      - run: npx cap add android
-      - run: npx cap sync android
-      - name: Patch Android project
-        env: { VERSION_CODE: "${{ github.run_number }}" }
-        run: node scripts/patch-android.js
-      - name: Build signed APK
-        working-directory: android
+      - name: Build
+        id: build
+        continue-on-error: true
+        shell: bash
         env:
+          KS: ${{ secrets.KEYSTORE_B64 }}
           KS_FILE: ${{ runner.temp }}/ikoge.jks
           KS_PASS: ikoge-ultron-2026
-        run: ./gradlew assembleRelease --no-daemon
-      - name: Name the APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk Ikoge-Ultron.apk
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          set -o pipefail
+          {
+            set -ex
+            test -n "$KS" || { echo "SECRET KEYSTORE_B64 IS EMPTY"; exit 1; }
+            echo "$KS" | tr -d ' \r\n' | base64 -d > "$KS_FILE"
+            keytool -list -keystore "$KS_FILE" -storepass "$KS_PASS" | head -5
+            npm install --no-audit --no-fund
+            mkdir www
+            tar --exclude=./node_modules --exclude=./android --exclude=./www --exclude=./scripts --exclude=./supabase --exclude=./worker --exclude=./.github --exclude=./package.json --exclude=./package-lock.json --exclude=./capacitor.config.json --exclude=./README.md -cf - . | tar -xf - -C www
+            npx cap add android
+            npx cap sync android
+            node scripts/patch-android.js
+            cd android
+            ./gradlew assembleRelease --no-daemon --stacktrace
+            cd ..
+            find android -name "*.apk"
+            cp android/app/build/outputs/apk/release/app-release.apk Ikoge-Ultron.apk
+          } 2>&1 | tee build.log
+      - name: Save build log to the build-logs branch
+        if: always()
+        shell: bash
+        run: |
+          tail -n 300 build.log > "$RUNNER_TEMP/log.txt" || echo "no log" > "$RUNNER_TEMP/log.txt"
+          echo "RESULT: ${{ steps.build.outcome }}" >> "$RUNNER_TEMP/log.txt"
+          git config user.name "build-bot"
+          git config user.email "build-bot@users.noreply.github.com"
+          git switch --orphan build-logs
+          git rm -rf . > /dev/null 2>&1 || true
+          cp "$RUNNER_TEMP/log.txt" build-log.txt
+          git add build-log.txt
+          git commit -m "build log run ${{ github.run_number }}"
+          git push -f origin build-logs
+      - name: Stop here if the build failed
+        if: steps.build.outcome != 'success'
+        run: exit 1
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-${{ github.run_number }}
