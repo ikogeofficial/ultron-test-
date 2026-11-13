@@ -4,12 +4,12 @@
 const cap = window.Capacitor;
 const native = !!(cap && cap.isNativePlatform && cap.isNativePlatform());
 const LN = native ? ((cap.Plugins && cap.Plugins.LocalNotifications) || cap.registerPlugin('LocalNotifications')) : null;
-const DAYS = 21, CH = 'ikoge-rem';
+const DAYS = 14, CH = 'ikoge-rem';
 const $ = (s, r = document) => r.querySelector(s);
 const pad2 = n => String(n).padStart(2, '0');
 const dkey = d => d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
 const jget = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
-const DONE_KEY = { pray: 't1', store: 't2', pauline: 't5', evening: 't4', body: 'bx' };
+const DONE_KEY = { pray: 't1', bible: 't1', jamb: 't3', store: 't2', pauline: 't5', evening: 't4', body: 'bx' };
 function isDoneToday(id) {
   const k = dkey(new Date());
   if (id === 'readA' || id === 'readB') return !!((jget('if_done', {})[k] || {})[id === 'readA' ? 'A' : 'B']);
@@ -18,20 +18,56 @@ function isDoneToday(id) {
 }
 function goTab(t) { const b = $('.nav-btn[data-t="' + t + '"]'); if (b) b.click(); }
 
+/* ---------- the schedule (October plan). Wed = 3. Sunday = 0. ---------- */
+const SUBJ = { 0: 'Review day: go over the week.', 1: 'Biology', 2: 'Chemistry', 3: 'Physics', 4: 'English', 5: 'Biology', 6: 'Chemistry and Physics practice' };
+const JAMB_BODY = {}; Object.keys(SUBJ).forEach(k => { JAMB_BODY[k] = 'Time to study: ' + SUBJ[k] + '. Phone face down, timer on.'; });
+const NEW_DEFS = [
+  { id: 'wake', label: 'Wake up', time: '06:00', tab: 'today', body: 'Good morning. Get up now.', dayTime: { 3: '05:00' } },
+  { id: 'pray', label: 'Prayer + daily declaration', time: '06:05', tab: 'today', body: 'Pray and say your daily declaration.', dayTime: { 3: '05:05' } },
+  { id: 'church', label: 'Leave for church', time: '06:10', tab: 'today', body: 'Church starts at 6:30. Leave now.', only: [3] },
+  { id: 'body', label: 'Exercise', time: '06:15', tab: 'train', body: 'Exercise now. 20 to 30 minutes.', not: [3] },
+  { id: 'bible', label: 'Bible: Genesis 1 onward', time: '07:00', tab: 'today', body: 'Read your next chapter.', not: [3] },
+  { id: 'brk', label: 'Breakfast + 20 min past questions', time: '07:30', tab: 'read', body: 'Eat, then 20 minutes of JAMB past questions.', dayTime: { 3: '07:45' } },
+  { id: 'walk', label: 'Thank-you prayer first', time: '14:30', tab: 'today', body: 'You are back from lessons. Pray first, then everything else.' },
+  { id: 'jamb', label: 'JAMB, 3:00 to 5:00 PM', time: '15:00', tab: 'read', body: 'Time to study.', dayBody: JAMB_BODY },
+  { id: 'evening', label: 'Evening prayer', time: '19:30', tab: 'today', body: 'Time for evening prayer.' },
+  { id: 'pauline', label: 'Pauline chapter', time: '20:45', tab: 'today', body: 'Read one Pauline chapter.' },
+  { id: 'winddown', label: 'Wind-down', time: '21:00', tab: 'today', body: 'Wind-down. Plan tomorrow, then inspiration.' },
+  { id: 'store', label: 'Phone to the store', time: '21:15', tab: 'today', body: 'Put your phone in the store for the night.' },
+  { id: 'sleep', label: 'Sleep', time: '21:30', tab: 'today', body: 'Lights out. Sleep is when you grow.' }
+];
+function applySchedule() {
+  const R = window.ulRem; if (!R || !R.DEFS) return false;
+  try {
+    if (localStorage.getItem('ik_sched_v') !== 'nov13') {
+      const c = jget('if_rem', null);
+      localStorage.setItem('if_rem', JSON.stringify({ on: c ? !!c.on : native, items: {} }));
+      localStorage.setItem('ik_sched_v', 'nov13');
+    }
+  } catch (e) {}
+  R.DEFS.length = 0; NEW_DEFS.forEach(d => R.DEFS.push(d));
+  try { R.paint(); } catch (e) {}
+  return true;
+}
+applySchedule();
+
 /* pure: every alarm from now on, for the next `days` days. Done-today reminders are left out for today. */
 function plan(nowMs, cfg, defs, isDone, days) {
   const out = [], n = new Date(nowMs);
   for (let off = 0; off < days; off++) {
     const d = new Date(n.getFullYear(), n.getMonth(), n.getDate() + off);
     const dayNo = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+    const wd = d.getDay();
     defs.forEach((def, i) => {
       const it = cfg.items[def.id]; if (!it || !it.on) return;
-      const p = String(it.time).split(':'), h = Number(p[0]), m = Number(p[1]);
+      if (def.only && def.only.indexOf(wd) < 0) return;
+      if (def.not && def.not.indexOf(wd) >= 0) return;
+      const p = String((def.dayTime && def.dayTime[wd]) || it.time).split(':'), h = Number(p[0]), m = Number(p[1]);
       if (!(h >= 0 && h < 24 && m >= 0 && m < 60)) return;
       const at = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m, 0, 0).getTime();
       if (at <= nowMs) return;
       if (off === 0 && isDone(def.id)) return;
-      out.push({ id: dayNo * 16 + i + 1, at, title: def.label, body: def.body, tab: def.tab });
+      out.push({ id: dayNo * 16 + i + 1, at, title: def.label, body: (def.dayBody && def.dayBody[wd]) || def.body, tab: def.tab });
     });
   }
   return out;
@@ -44,6 +80,7 @@ async function sync() {
   busy = true;
   try {
     const R = window.ulRem; if (!R) { setTimeout(sync, 1500); return; }
+    if (R.DEFS.length !== NEW_DEFS.length || !R.DEFS[0] || R.DEFS[0].id !== 'wake') applySchedule();
     const perm = await LN.checkPermissions();
     if (perm.display !== 'granted') return;
     await LN.createChannel({ id: CH, name: 'Reminders', description: 'Daily reminders', importance: 5, visibility: 1, vibration: true });
